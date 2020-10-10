@@ -1,18 +1,20 @@
 import arcade
 import os
-from math import atan2, sin, cos
+from math import atan2, sin, cos, sqrt
 SPRITE_SCALING = 0.5
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Play"
+sp_coordinates_guards = [(80, 430),(130, 430),
+                        (80, 370),(130, 370)]
 
-MOVEMENT_SPEED = 5 
+MOVEMENT_SPEED = 10 *SPRITE_SCALING 
 
 
 class Player(arcade.Sprite):
     def __init__(self):
-        HERO_SCALING = 2.0
-        super().__init__("images/hero.png", SPRITE_SCALING*HERO_SCALING)
+        HERO_SCALING = 1.0 *SPRITE_SCALING
+        super().__init__("images/hero.png", SPRITE_SCALING, hit_box_algorithm = 'Detailed')
         self.hp = 15 * 60
         
     def update(self):
@@ -33,26 +35,31 @@ class Player(arcade.Sprite):
         self.radians = atan2(mouse_pos['y'] - self.center_y, mouse_pos['x'] - self.center_x)
 
 class Guard(arcade.Sprite):
-    def __init__(self):
-        GUARD_SCALING = 0.5
-        super().__init__("images/guard.png", SPRITE_SCALING*GUARD_SCALING)
-        self.center_x = SCREEN_WIDTH / 2
-        self.center_y = SCREEN_HEIGHT / 2
-        self.hp = 5 * 60
+    def __init__(self, x, y, player_x, player_y):
+        GUARD_SCALING = 0.25 *SPRITE_SCALING
+        super().__init__("images/guard.png", GUARD_SCALING, hit_box_algorithm = 'Detailed')
+        self.center_x = x
+        self.center_y = y
+        self.hp = 60 * 5
+        self.player_x = player_x
+        self.player_y = player_y
     
     def update(self):
-        pass
-        
-#-----------------------------------------------------
+        x = self.center_x - self.player_x
+        y = self.center_y - self.player_y
+        r = sqrt(x * x + y * y)
+        if self.center_x < 450:
+            self.center_x += 10/60
+
 class Bullet(arcade.Sprite):
     global BULLET_SCALING, DISTANCE_FROM_PLAYER, SPEED_BULLET, BULLET_DAMAGE
     BULLET_DAMAGE = 150 
-    BULLET_SCALING = 0.3
-    DISTANCE_FROM_PLAYER = 30
-    SPEED_BULLET = 10
+    BULLET_SCALING = 0.15 *SPRITE_SCALING
+    DISTANCE_FROM_PLAYER = 30 *SPRITE_SCALING
+    SPEED_BULLET = 10 *SPRITE_SCALING
     
     def __init__(self, hero_pos, mouse_pos):
-        super().__init__("images/bullet.png", SPRITE_SCALING*BULLET_SCALING)
+        super().__init__("images/bullet.png", BULLET_SCALING, hit_box_algorithm = 'Detailed')
         self.angle_rad = atan2(mouse_pos['y'] - hero_pos['y'], mouse_pos['x'] - hero_pos['x'])
         self.center_x = hero_pos['x'] + DISTANCE_FROM_PLAYER * cos(self.angle_rad)
         self.center_y = hero_pos['y'] + DISTANCE_FROM_PLAYER * sin(self.angle_rad)
@@ -80,54 +87,71 @@ class MyGame(arcade.Window):
     def setup(self):
         self.player_list = arcade.SpriteList()
         self.player_sprite = Player()
-        self.player_sprite.center_x = 50
+        self.player_sprite.center_x = 400
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
 
-        self.guards_sprite = Guard()
         self.guards_list = arcade.SpriteList()
-        self.guards_list.append(self.guards_sprite)
+        for i in range(len(sp_coordinates_guards)):
+            x, y = sp_coordinates_guards[i]
+            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
+            self.guards_list.append(self.guards_sprite)
 
         self.bullet_list = arcade.SpriteList()
         hero = self.player_sprite
         self.mouse_pos = {'x': hero.center_x, 'y': hero.center_y, 'dx': 0, 'dy': 0, 'button': 0}
 
+
+        self.all_sprites = arcade.SpriteList()
+        self.all_sprites.extend(self.player_list)
+        self.all_sprites.extend(self.guards_list)
+        self.all_sprites.extend(self.bullet_list)
+        print(self.all_sprites)
+
     def on_draw(self):
         arcade.start_render()
-        self.guards_list.draw()
-        self.player_list.draw()
-        self.bullet_list.draw()
-#-----------------------------------------------------
+        self.all_sprites.draw()
+        #self.guards_list.draw()
+        #self.player_list.draw()
+        #self.bullet_list.draw()
+
     def shot(self):
         if self.mouse_pos['button'] == 1:
-            print('shot')
             hero = self.player_sprite
             one_bullet = Bullet({'x': hero.center_x, 'y': hero.center_y}, self.mouse_pos)
-            print(one_bullet)
             self.bullet_list.append(one_bullet)
+            self.all_sprites.append(one_bullet)
 
     def on_update(self, delta_time):
-        self.guards_list.update()
         self.player_list.update()
+        self.guards_list.update()
+        for guard in self.guards_list:
+            guard.player_x = self.player_sprite.center_x
+            guard.player_y = self.player_sprite.center_y
         self.player_sprite.update_angle(self.mouse_pos)
         self.shot()
         self.bullet_list.update()
 
-        guards_punch_list = arcade.check_for_collision_with_list(self.player_sprite, 
-          self.guards_list)
+        guards_punch_list = arcade.check_for_collision_with_list(self.player_sprite, self.guards_list)
     
         for guard in guards_punch_list:
             guard.hp -= 1  
             self.player_sprite.hp -= 1
             if guard.hp < 1:
                 self.guards_list.remove(guard)
-        guards_punch_list = arcade.check_for_collision_with_list(self.player_sprite, 
-          self.guards_list)
-        for guard in guards_punch_list:
-            guard.hp -= 1  
-            self.player_sprite.hp -= 1
-            if guard.hp < 1:
-                self.guards_list.remove(guard)
+                self.all_sprites.remove(guard)
+
+        for bullet in self.bullet_list:
+            all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
+            guards_shot_list = arcade.check_for_collision_with_list(bullet, self.guards_list)
+            for item in guards_shot_list:
+                self.bullet_list.remove(bullet)
+                self.all_sprites.remove(bullet)
+            for guard in guards_shot_list:
+                guard.hp -= 150
+                if guard.hp < 1:
+                    self.guards_list.remove(guard)
+                    self.all_sprites.remove(guard)
                 
         self.mouse_pos['button'] = 0
 
