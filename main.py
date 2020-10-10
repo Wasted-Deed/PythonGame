@@ -5,6 +5,8 @@ SPRITE_SCALING = 0.5
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Play"
+sp_coordinates_guards = [(80, 80),(540, 540),
+                        (80, 540),(540, 80)]
 
 MOVEMENT_SPEED = 5 
 
@@ -32,16 +34,15 @@ class Player(arcade.Sprite):
         self.radians = atan2(mouse_list['y'] - self.center_y, mouse_list['x'] - self.center_x)
 
 class Guard(arcade.Sprite):
-    def __init__(self):
+    def __init__(self, x, y):
         super().__init__("images/guard.png", SPRITE_SCALING)
-        self.center_x = SCREEN_WIDTH / 2
-        self.center_y = SCREEN_HEIGHT / 2
+        self.center_x = x
+        self.center_y = y
         self.hp = 60 * 5
     
     def update(self):
         pass
 
-        
 
 class MyGame(arcade.Window):
 
@@ -66,9 +67,11 @@ class MyGame(arcade.Window):
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
 
-        self.guards_sprite = Guard()
         self.guards_list = arcade.SpriteList()
-        self.guards_list.append(self.guards_sprite)
+        for i in range(4):
+            
+            self.guards_sprite = Guard(x, y)
+            self.guards_list.append(self.guards_sprite)
 
         self.mouse =arcade.View()
         self.mouse_pos = {'x': self.player_sprite.center_x, 'y': self.player_sprite.center_y, 'dx': 0, 'dy': 0}
