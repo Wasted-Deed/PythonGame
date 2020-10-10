@@ -11,8 +11,8 @@ MOVEMENT_SPEED = 5
 
 class Player(arcade.Sprite):
     def __init__(self):
-        super().__init__("images/knight.jpg", SPRITE_SCALING)
-        self.hp = 60 * 100
+        super().__init__("images/hero.png", SPRITE_SCALING)
+        self.hp = 60 * 15
         
     def update(self):
         self.center_x += self.change_x
@@ -33,7 +33,7 @@ class Player(arcade.Sprite):
 
 class Guard(arcade.Sprite):
     def __init__(self):
-        super().__init__("images/guard.jpg", SPRITE_SCALING)
+        super().__init__("images/guard.png", SPRITE_SCALING)
         self.center_x = SCREEN_WIDTH / 2
         self.center_y = SCREEN_HEIGHT / 2
         self.hp = 60 * 5
