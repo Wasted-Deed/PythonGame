@@ -35,6 +35,7 @@ class Guard(arcade.Sprite):
         super().__init__("guard.jpg", SPRITE_SCALING)
         self.center_x = SCREEN_WIDTH / 2
         self.center_y = SCREEN_HEIGHT / 2
+        self.center_x = 50
 
         
 
