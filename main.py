@@ -35,7 +35,9 @@ class Guard(arcade.Sprite):
         super().__init__("guard.jpg", SPRITE_SCALING)
         self.center_x = SCREEN_WIDTH / 2
         self.center_y = SCREEN_HEIGHT / 2
-        self.center_x = 50
+    
+    def update(self):
+        pass
 
         
 
@@ -49,6 +51,9 @@ class MyGame(arcade.Window):
 
         self.player_list = None
         self.player_sprite = None
+
+        self.guards_list = None
+        self.guards_sprite = None
         arcade.set_background_color(arcade.color.AMAZON)
 
     def setup(self):
@@ -59,16 +64,29 @@ class MyGame(arcade.Window):
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
 
+        self.guards_sprite = Guard()
+        self.guards_list = arcade.SpriteList()
+        self.guards_list.append(self.guards_sprite)
+
         self.mouse =arcade.View()
         self.mouse_pos = {'x': self.player_sprite.center_x, 'y': self.player_sprite.center_y, 'dx': 0, 'dy': 0}
 
     def on_draw(self):
         arcade.start_render()
+        self.guards_list.draw()
         self.player_list.draw()
+    
 
     def on_update(self, delta_time):
+        self.guards_list.update()
         self.player_list.update()
+
         self.player_sprite.update_angle(self.mouse_pos)
+
+        guards_hit_list = arcade.check_for_collision_with_list(self.player_sprite, 
+          self.guards_list)
+        for guard in guards_hit_list:
+            guard.kill()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.UP:
