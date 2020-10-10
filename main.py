@@ -11,8 +11,9 @@ MOVEMENT_SPEED = 5
 
 class Player(arcade.Sprite):
     def __init__(self):
-        HERO_SCALING = 3.0
-        super().__init__("hero.png", SPRITE_SCALING*HERO_SCALING)
+        HERO_SCALING = 2.0
+        super().__init__("images/hero.png", SPRITE_SCALING*HERO_SCALING)
+        self.hp = 60 * 15
         
     def update(self):
         self.center_x += self.change_x
@@ -34,16 +35,18 @@ class Player(arcade.Sprite):
 class Guard(arcade.Sprite):
     def __init__(self):
         GUARD_SCALING = 0.5
-        super().__init__("guard.png", SPRITE_SCALING*GUARD_SCALING)
+        super().__init__("images/guard.png", SPRITE_SCALING*GUARD_SCALING)
         self.center_x = SCREEN_WIDTH / 2
         self.center_y = SCREEN_HEIGHT / 2
+        self.hp = 60 * 5
     
     def update(self):
         pass
 
 class Bullet(arcade.Sprite):
     def __init__(self):
-        super().__init__("guard.png", SPRITE_SCALING)
+        BULLET_SCALING = 1.0
+        super().__init__("images/bullet.png", SPRITE_SCALING*BULLET_SCALING)
 
     def update(self):
         pass
@@ -92,23 +95,32 @@ class MyGame(arcade.Window):
 
         guards_hit_list = arcade.check_for_collision_with_list(self.player_sprite, 
           self.guards_list)
+    
         for guard in guards_hit_list:
-            guard.kill()
+            guard.hp -= 1  
+            self.player_sprite.hp -= 1
+            if guard.hp < 1:
+                self.guards_list.remove(guard)
+                #guard.kill()
 
     def on_key_press(self, key, modifiers):
-        if key == arcade.key.UP:
+        if key == arcade.key.UP or key == arcade.key.W:
             self.player_sprite.change_y = MOVEMENT_SPEED
-        elif key == arcade.key.DOWN:
+        elif key == arcade.key.DOWN or key == arcade.key.S:
             self.player_sprite.change_y = -MOVEMENT_SPEED
-        elif key == arcade.key.LEFT:
+        elif key == arcade.key.LEFT or key == arcade.key.A:
             self.player_sprite.change_x = -MOVEMENT_SPEED
-        elif key == arcade.key.RIGHT:
+        elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player_sprite.change_x = MOVEMENT_SPEED
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.UP or key == arcade.key.DOWN:
             self.player_sprite.change_y = 0
+        elif key == arcade.key.W or key == arcade.key.S:
+            self.player_sprite.change_y = 0
         elif key == arcade.key.LEFT or key == arcade.key.RIGHT:
+            self.player_sprite.change_x = 0
+        elif key == arcade.key.A or key == arcade.key.D:
             self.player_sprite.change_x = 0
 
     def on_mouse_motion(self, x, y, dx, dy):
