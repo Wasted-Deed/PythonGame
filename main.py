@@ -1,19 +1,20 @@
 import arcade
 import os
-from math import atan2
+from math import atan2, sqrt
 SPRITE_SCALING = 0.5
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Play"
-sp_coordinates_guards = [(80, 80),(540, 540),
-                        (80, 540),(540, 80)]
+sp_coordinates_guards = [(80, 430),(130, 430),
+                        (80, 370),(130, 370)]
 
 MOVEMENT_SPEED = 5 
 
 
 class Player(arcade.Sprite):
     def __init__(self):
-        super().__init__("images/hero.png", SPRITE_SCALING)
+        HERO_SCALING = 1.0
+        super().__init__("images/hero.png", SPRITE_SCALING*HERO_SCALING)
         self.hp = 60 * 15
         
     def update(self):
@@ -34,15 +35,29 @@ class Player(arcade.Sprite):
         self.radians = atan2(mouse_list['y'] - self.center_y, mouse_list['x'] - self.center_x)
 
 class Guard(arcade.Sprite):
-    def __init__(self, x, y):
-        super().__init__("images/guard.png", SPRITE_SCALING)
+    def __init__(self, x, y, player_x, player_y):
+        GUARD_SCALING = 0.25
+        super().__init__("images/guard.png", SPRITE_SCALING*GUARD_SCALING)
         self.center_x = x
         self.center_y = y
         self.hp = 60 * 5
+        self.player_x = player_x
+        self.player_y = player_y
     
     def update(self):
-        pass
+        x = self.center_x - self.player_x
+        y = self.center_y - self.player_y
+        r = sqrt(x * x + y * y)
+        if self.center_x < 450:
+            self.center_x += 10/60
 
+class Bullet(arcade.Sprite):
+    def __init__(self):
+        BULLET_SCALING = 1.0
+        super().__init__("images/bullet.png", SPRITE_SCALING*BULLET_SCALING)
+
+    def update(self):
+        pass
 
 class MyGame(arcade.Window):
 
@@ -63,14 +78,14 @@ class MyGame(arcade.Window):
 
         self.player_list = arcade.SpriteList()
         self.player_sprite = Player()
-        self.player_sprite.center_x = 50
+        self.player_sprite.center_x = 400
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
 
         self.guards_list = arcade.SpriteList()
-        for i in range(4):
-            
-            self.guards_sprite = Guard(x, y)
+        for i in range(len(sp_coordinates_guards)):
+            x, y = sp_coordinates_guards[i]
+            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
             self.guards_list.append(self.guards_sprite)
 
         self.mouse =arcade.View()
@@ -83,8 +98,11 @@ class MyGame(arcade.Window):
     
 
     def on_update(self, delta_time):
-        self.guards_list.update()
         self.player_list.update()
+        self.guards_list.update()
+        for guard in self.guards_list:
+            guard.player_x = self.player_sprite.center_x
+            guard.player_y = self.player_sprite.center_y
 
         self.player_sprite.update_angle(self.mouse_pos)
 
@@ -94,7 +112,7 @@ class MyGame(arcade.Window):
         for guard in guards_hit_list:
             guard.hp -= 1  
             self.player_sprite.hp -= 1
-            if guard.hp == 0:
+            if guard.hp < 1:
                 self.guards_list.remove(guard)
                 #guard.kill()
 
