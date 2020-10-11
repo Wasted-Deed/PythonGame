@@ -1,77 +1,10 @@
 import arcade
 import os
 from math import atan2, sin, cos, sqrt
-
-
-SPRITE_SCALING = 0.5 #берём 50% размера от исходного файла
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-SCREEN_TITLE = "Play"
-sp_coordinates_guards = [(80, 430),(130, 430),
-                        (80, 370),(130, 370)]  #координаты охранников, потом уберу в отдельные место
-
-MOVEMENT_SPEED = 10 *SPRITE_SCALING #скорость перса
-
-
-class Player(arcade.Sprite): #класс персанажа
-    def __init__(self):
-        HERO_SCALING = 1.0 *SPRITE_SCALING #отдельная переменная для размера срайта, если захотим отдельно от всех уменьшить\увеличить
-        super().__init__("images/hero.png", HERO_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
-                                                         #чтобы спрайт блок охватывал именно очертания картинки
-        self.hp = 15 * 60 #хп
-        
-    def update(self): # перемещение перса и проверки, чтобы за экран не выходил
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
-
-    def update_angle(self, mouse_pos):# перс следит за мышкой
-        self.radians = atan2(mouse_pos['y'] - self.center_y, mouse_pos['x'] - self.center_x)
-
-class Guard(arcade.Sprite):#класс охранников
-    def __init__(self, x, y, player_x, player_y):
-        GUARD_SCALING = 0.25 *SPRITE_SCALING
-        super().__init__("images/guard.png", GUARD_SCALING, hit_box_algorithm = 'Detailed')
-        self.center_x = x
-        self.center_y = y
-        self.hp = 60 * 5
-        self.player_x = player_x
-        self.player_y = player_y
-    
-    def update(self):
-        x = self.center_x - self.player_x
-        y = self.center_y - self.player_y
-        r = sqrt(x * x + y * y)
-        if self.center_x < 450:
-            self.center_x += 30/60
-
-class Bullet(arcade.Sprite): #стрельба перса, путём сложных вычислений перс теперь стреляет
-    #откуда? что? куда? как? это не ко мне)) я славу богу не делал это)) @Alik
-    global BULLET_SCALING, DISTANCE_FROM_PLAYER, SPEED_BULLET, BULLET_DAMAGE
-    BULLET_DAMAGE = 150 
-    BULLET_SCALING = 0.15 *SPRITE_SCALING
-    DISTANCE_FROM_PLAYER = 30 *SPRITE_SCALING
-    SPEED_BULLET = 10 *SPRITE_SCALING
-    
-    def __init__(self, hero_pos, mouse_pos):
-        super().__init__("images/bullet.png", BULLET_SCALING, hit_box_algorithm = 'Detailed')
-        self.angle_rad = atan2(mouse_pos['y'] - hero_pos['y'], mouse_pos['x'] - hero_pos['x'])
-        self.center_x = hero_pos['x'] + DISTANCE_FROM_PLAYER * cos(self.angle_rad)
-        self.center_y = hero_pos['y'] + DISTANCE_FROM_PLAYER * sin(self.angle_rad)
-        self.radians = self.angle_rad
-        
-    def update(self):
-        self.center_x += SPEED_BULLET * cos(self.angle_rad)
-        self.center_y += SPEED_BULLET * sin(self.angle_rad)
+from Guard import Guard
+from Player import  Player
+from variables import *
+from Bullet import Bullet
 
 class MyGame(arcade.Window):#самый главный класс
 
@@ -110,7 +43,6 @@ class MyGame(arcade.Window):#самый главный класс
         self.all_sprites.extend(self.player_list)
         self.all_sprites.extend(self.guards_list)
         self.all_sprites.extend(self.bullet_list)
-        print(self.all_sprites)
 
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
@@ -141,8 +73,8 @@ class MyGame(arcade.Window):#самый главный класс
         guards_punch_list = arcade.check_for_collision_with_list(self.player_sprite, self.guards_list)#проверяем взаимодейсвие 
         #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
     
-        for guard in guards_punch_list:# наносит 60 урона в секунду, когда перс касается спрайта охранника
-            guard.hp -= 1  
+        for guard in guards_punch_list:# наносит 60 урона в секунду персу, когда перс касается спрайта охранника
+           #guard.hp -= 1  
             self.player_sprite.hp -= 1
             if guard.hp < 1:
                 self.guards_list.remove(guard)#удаляем спрайт если охранник умер
