@@ -16,7 +16,7 @@ MOVEMENT_SPEED = 10 *SPRITE_SCALING #скорость перса
 class Player(arcade.Sprite): #класс персанажа
     def __init__(self):
         HERO_SCALING = 1.0 *SPRITE_SCALING #отдельная переменная для размера срайта, если захотим отдельно от всех уменьшить\увеличить
-        super().__init__("images/hero.png", SPRITE_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
+        super().__init__("images/hero.png", HERO_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
                                                          #чтобы спрайт блок охватывал именно очертания картинки
         self.hp = 15 * 60 #хп
         
@@ -52,7 +52,7 @@ class Guard(arcade.Sprite):#класс охранников
         y = self.center_y - self.player_y
         r = sqrt(x * x + y * y)
         if self.center_x < 450:
-            self.center_x += 10/60
+            self.center_x += 30/60
 
 class Bullet(arcade.Sprite): #стрельба перса, путём сложных вычислений перс теперь стреляет
     #откуда? что? куда? как? это не ко мне)) я славу богу не делал это)) @Alik
@@ -151,9 +151,10 @@ class MyGame(arcade.Window):#самый главный класс
         for bullet in self.bullet_list:# почти аналогично как и для охраны
             all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
             guards_shot_list = arcade.check_for_collision_with_list(bullet, self.guards_list)
-            for item in guards_shot_list:
+            for item in all_shot_list:
                 self.bullet_list.remove(bullet)
                 self.all_sprites.remove(bullet)
+                break
             for guard in guards_shot_list:
                 guard.hp -= 150
                 if guard.hp < 1:
