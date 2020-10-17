@@ -12,9 +12,11 @@ class Guard(arcade.Sprite):#класс охранников
         super().__init__("images/guard.png", GUARD_SCALING, hit_box_algorithm = 'Detailed')
         self.center_x = x
         self.center_y = y
-        self.hp = 60 * 5
+        self.max_hp = 60 * 5
+        self.hp = self.max_hp
         self.player_x = player_x
         self.player_y = player_y
+        print(self.height, self.width)
     
     def update(self):
         x = self.center_x - self.player_x

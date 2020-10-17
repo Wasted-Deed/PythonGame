@@ -5,6 +5,7 @@ from Guard import Guard
 from Player import  Player
 from variables import *
 from Bullet import Bullet
+from hp import draw_hp
 
 class MyGame(arcade.Window):#самый главный класс
 
@@ -24,6 +25,7 @@ class MyGame(arcade.Window):#самый главный класс
     def setup(self): # функция нужна для создания всех и всего
         self.player_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
         self.player_sprite = Player() #создаём перса и кидаем ему координаты
+
         self.player_sprite.center_x = 400
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)#кидаем перса в наш список спратов для перса
@@ -47,9 +49,10 @@ class MyGame(arcade.Window):#самый главный класс
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
         self.all_sprites.draw()
-        #self.guards_list.draw()
-        #self.player_list.draw()
-        #self.bullet_list.draw()
+        hero = self.player_sprite
+        draw_hp(hero.center_x, hero.center_y, hero._height, hero.max_hp, hero.hp)
+        for guard in self.guards_list:
+            draw_hp(guard.center_x, guard.center_y, guard._height, guard.max_hp, guard.hp)
 
     def shot(self): #функция для стрельбы
         if self.mouse_pos['button'] == 1:
@@ -123,6 +126,7 @@ class MyGame(arcade.Window):#самый главный класс
 
 
 def main():# собственно запуск
+    global window 
     window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     window.setup()
     arcade.run()
