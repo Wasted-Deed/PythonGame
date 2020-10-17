@@ -20,9 +20,15 @@ class MyGame(arcade.Window):#самый главный класс
         #переменные спрайта для охраны
         self.guards_list = None
         self.guards_sprite = None
-        arcade.set_background_color(arcade.color.AMAZON) #цвет фона
+        #arcade.set_background_color(arcade.color.AMAZON) #цвет фона
+        self.land = None
 
     def setup(self): # функция нужна для создания всех и всего
+        self.land = arcade.SpriteList()
+        for i in range(int(SCREEN_WIDTH/25)):
+            for j in range(int(SCREEN_HEIGHT/25)):
+                self.land.append(arcade.Sprite("images/земля.png", 0.5, center_x = (12.5 + 25*i), center_y = (12.5 + 25*j)))
+
         self.player_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
         self.player_sprite = Player() #создаём перса и кидаем ему координаты
 
@@ -49,6 +55,7 @@ class MyGame(arcade.Window):#самый главный класс
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
 
+        self.land.draw()
         self.all_sprites.draw()
 
 
@@ -71,6 +78,8 @@ class MyGame(arcade.Window):#самый главный класс
         for guard in self.guards_list:#передаю координаты перса охранникам
             guard.player_x = self.player_sprite.center_x
             guard.player_y = self.player_sprite.center_y
+            if guard.r <= 25:
+                self.player_sprite.hp -= guard.atk
 
         self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу
         self.shot()
@@ -78,13 +87,6 @@ class MyGame(arcade.Window):#самый главный класс
 
         guards_punch_list = arcade.check_for_collision_with_list(self.player_sprite, self.guards_list)#проверяем взаимодейсвие 
         #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
-
-        for guard in guards_punch_list:# наносит 60 урона в секунду персу, когда перс касается спрайта охранника
-           #guard.hp -= 1  
-            self.player_sprite.hp -= 1
-            if guard.hp < 1:
-                self.guards_list.remove(guard)#удаляем спрайт если охранник умер
-                self.all_sprites.remove(guard)
 
         for bullet in self.bullet_list:# почти аналогично как и для охраны
             all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
@@ -94,7 +96,7 @@ class MyGame(arcade.Window):#самый главный класс
                 self.all_sprites.remove(bullet)
                 break
             for guard in guards_shot_list:
-                guard.hp -= 150
+                guard.hp -= bullet.atk
                 if guard.hp < 1:
                     self.guards_list.remove(guard)
                     self.all_sprites.remove(guard)
