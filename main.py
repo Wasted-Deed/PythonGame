@@ -49,8 +49,10 @@ class MyGame(arcade.Window):#самый главный класс
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
 
-        self.all_sprites.draw()
-
+        #порядок отрисовки от нижнего к верхнему
+        self.bullet_list.draw()
+        self.guards_list.draw()
+        self.player_list.draw()
 
         hero = self.player_sprite
         draw_hp(hero.center_x, hero.center_y, hero._height, hero.max_hp, hero.hp)
@@ -76,17 +78,17 @@ class MyGame(arcade.Window):#самый главный класс
         self.shot()
         self.bullet_list.update()
 
-        guards_punch_list = arcade.check_for_collision_with_list(self.player_sprite, self.guards_list)#проверяем взаимодейсвие 
+        guards_with_player = arcade.check_for_collision_with_list(self.player_sprite, self.guards_list)#проверяем взаимодейсвие 
         #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
     
-        for guard in guards_punch_list:# наносит 60 урона в секунду персу, когда перс касается спрайта охранника
-           #guard.hp -= 1  
+        for guard in guards_with_player: # наносит 60 урона в секунду персу, когда перс касается спрайта охранника
+           #guard.hp -= 1
             self.player_sprite.hp -= 1
             if guard.hp < 1:
-                self.guards_list.remove(guard)#удаляем спрайт если охранник умер
+                self.guards_list.remove(guard) #удаляем спрайт если охранник умер
                 self.all_sprites.remove(guard)
 
-        for bullet in self.bullet_list:# почти аналогично как и для охраны
+        for bullet in self.bullet_list: # почти аналогично как и для охраны
             all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
             guards_shot_list = arcade.check_for_collision_with_list(bullet, self.guards_list)
             for item in all_shot_list:
