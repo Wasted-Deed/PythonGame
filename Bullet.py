@@ -19,6 +19,7 @@ class Bullet(arcade.Sprite): #стрельба перса, путём сложн
         self.center_x = hero_pos['x'] + DISTANCE_FROM_PLAYER * cos(self.angle_rad)
         self.center_y = hero_pos['y'] + DISTANCE_FROM_PLAYER * sin(self.angle_rad)
         self.radians = self.angle_rad
+        self.atk = 150
         
     def update(self):
         self.center_x += SPEED_BULLET * cos(self.angle_rad)
