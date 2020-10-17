@@ -7,7 +7,6 @@ file_path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(file_path)
 
 class Bullet(arcade.Sprite): #стрельба перса, путём сложных вычислений перс теперь стреляет
-    #откуда? что? куда? как? это не ко мне)) я славу богу не делал это)) @Alik
     global BULLET_SCALING, DISTANCE_FROM_PLAYER, SPEED_BULLET, BULLET_DAMAGE
     BULLET_DAMAGE = 150 
     BULLET_SCALING = 0.15 *SPRITE_SCALING

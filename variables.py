@@ -4,7 +4,7 @@ SPRITE_SCALING = 0.5 #берём 50% размера от исходного фа
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Play"
-MOVEMENT_SPEED = 10 *SPRITE_SCALING #скорость перса
+MOVEMENT_SPEED = 200 /60 *SPRITE_SCALING #скорость перса
+GUARD_SPEED = 60 /60 *SPRITE_SCALING
 
-sp_coordinates_guards = [(80, 430),(130, 430),
-                        (80, 370),(130, 370)]  #координаты охранников, потом уберу в отдельные место
+sp_coordinates_guards = [(50, 370)]  #координаты охранников
