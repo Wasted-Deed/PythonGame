@@ -1,6 +1,6 @@
 import arcade
 import os
-from math import sqrt
+from math import sqrt, ceil
 from variables import *
 
 file_path = os.path.dirname(os.path.abspath(__file__))
@@ -20,5 +20,19 @@ class Guard(arcade.Sprite):#класс охранников
         x = self.center_x - self.player_x
         y = self.center_y - self.player_y
         r = sqrt(x * x + y * y)
-        if self.center_x < 450:
-            self.center_x += 30/60
+        if r > 220:
+            if self.center_x < 450:
+                self.center_x += 30/60
+        elif r > 40 and r < 220: #  гг в зоне видимости
+            #if x > y and (x != 0 and y != 0):
+                if self.center_x > self.player_x: #влево
+                    self.center_x -= 30/60
+                if self.center_x < self.player_x: #вправо
+                    self.center_x += 30/60
+            #elif y > x and (x != 0 and y != 0):
+                if self.center_y > self.player_y: #вверх
+                    self.center_y -= 30/60
+                if self.center_y < self.player_y: #вниз
+                    self.center_y += 30/60                
+        else: # гг на расстоянии рукопашного боя
+            pass 

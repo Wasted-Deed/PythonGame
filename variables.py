@@ -6,5 +6,4 @@ SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Play"
 MOVEMENT_SPEED = 10 *SPRITE_SCALING #скорость перса
 
-sp_coordinates_guards = [(80, 430),(130, 430),
-                        (80, 370),(130, 370)]  #координаты охранников, потом уберу в отдельные место
+sp_coordinates_guards = [(50, 370)]  #координаты охранников
