@@ -72,13 +72,13 @@ class MyGame(arcade.Window):#самый главный класс
             guard.player_x = self.player_sprite.center_x
             guard.player_y = self.player_sprite.center_y
 
-        self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу и если надо стреляем
+        self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу
         self.shot()
         self.bullet_list.update()
 
         guards_punch_list = arcade.check_for_collision_with_list(self.player_sprite, self.guards_list)#проверяем взаимодейсвие 
         #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
-    
+
         for guard in guards_punch_list:# наносит 60 урона в секунду персу, когда перс касается спрайта охранника
            #guard.hp -= 1  
             self.player_sprite.hp -= 1
