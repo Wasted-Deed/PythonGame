@@ -48,7 +48,10 @@ class MyGame(arcade.Window):#самый главный класс
 
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
+
         self.all_sprites.draw()
+
+
         hero = self.player_sprite
         draw_hp(hero.center_x, hero.center_y, hero._height, hero.max_hp, hero.hp)
         for guard in self.guards_list:
