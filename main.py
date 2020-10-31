@@ -28,15 +28,17 @@ class MyGame(arcade.Window):#самый главный класс
         for i in sp_coordinates_field:
             #self.land.append(arcade.Sprite("images/земля.png", 0.5, center_x = i[0], center_y = i[1]))
             pass
-        self.player_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
+        self.people_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
         self.player_sprite = Player() #создаём перса и кидаем ему координаты
         self.player_sprite.center_x = 400
         self.player_sprite.center_y = 50
         self.people_list.append(self.player_sprite)#кидаем перса в наш список спратов для перса
 
+        self.guards_list = arcade.SpriteList()
         for i in range(len(sp_coordinates_guards)):
             x, y = sp_coordinates_guards[i]
             self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
+            self.guards_list.append(self.guards_sprite)
             self.people_list.append(self.guards_sprite)
 
         self.bullet_list = arcade.SpriteList()#также создаём пули
