@@ -15,6 +15,9 @@ class Player(arcade.Sprite): #класс персанажа
         self.max_hp = 15 * 60 #хп
         self.hp = self.max_hp
         self.hp_bar = self.hp // 10
+        self.speed = MOVEMENT_SPEED
+        self.center = 0
+        self.a = []
     
     def update(self): # перемещение перса и проверки, чтобы за экран не выходил
         self.center_x += self.change_x
@@ -32,3 +35,9 @@ class Player(arcade.Sprite): #класс персанажа
 
     def update_angle(self, mouse_pos):# перс следит за мышкой
         self.radians = atan2(mouse_pos['y'] - self.center_y, mouse_pos['x'] - self.center_x)
+        
+    def player_field(self):
+        self.center= (12.5 + 25 * int(self.center_x / 25), 12.5 + 25 * int(self.center_y / 25))
+        for i in range(-1, 1):
+            self.a.append((self.center[0], self.center[1]))
+        #arcade.draw_point(i[0], i[1], arcade.color.RED, 7)

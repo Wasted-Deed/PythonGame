@@ -7,6 +7,7 @@ from variables import *
 from Bullet import Bullet
 from hp import draw_hp
 
+
 class MyGame(arcade.Window):#самый главный класс
 
     def __init__(self, width, height, title):
@@ -25,10 +26,9 @@ class MyGame(arcade.Window):#самый главный класс
 
     def setup(self): # функция нужна для создания всех и всего
         self.land = arcade.SpriteList()
-        for i in range(int(SCREEN_WIDTH/25)):
-            for j in range(int(SCREEN_HEIGHT/25)):
-                self.land.append(arcade.Sprite("images/земля.png", 0.5, center_x = (12.5 + 25*i), center_y = (12.5 + 25*j)))
-
+        for i in sp_coordinates_field:
+            #self.land.append(arcade.Sprite("images/земля.png", 0.5, center_x = i[0], center_y = i[1]))
+            pass
         self.player_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
         self.player_sprite = Player() #создаём перса и кидаем ему координаты
 
@@ -55,6 +55,9 @@ class MyGame(arcade.Window):#самый главный класс
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
 
+        self.player_sprite.player_field()
+        for guard in self.guards_list:
+            guard.guard_field()
         self.land.draw()
         self.all_sprites.draw()
 

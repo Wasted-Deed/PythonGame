@@ -1,6 +1,7 @@
 import arcade
 from variables import *
 
+#два прямоугольника для полоски жизней
 def draw_hp(center_x, center_y, height, max_hp, hp):
         arcade.draw_rectangle_filled(
             center_x = center_x, 

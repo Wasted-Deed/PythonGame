@@ -4,6 +4,12 @@ SPRITE_SCALING = 0.5 #берём 50% размера от исходного фа
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Play"
-MOVEMENT_SPEED = 10 *SPRITE_SCALING #скорость перса
+MOVEMENT_SPEED = 200 /60 *SPRITE_SCALING #скорость перса
+GUARD_SPEED = 60 /60 *SPRITE_SCALING
 
-sp_coordinates_guards = [(50, 370)]  #координаты охранников
+sp_coordinates_guards = [(337.5, 337.5)]  #координаты охранников
+sp_coordinates_field = [] #координаты всего поля
+for i in range(int(SCREEN_WIDTH/25)):
+    for j in range(int(SCREEN_HEIGHT/25)):
+        sp_coordinates_field.append((12.5+25*i, 12.5+25*j)) 
+#print(sp_coordinates_field, end = " ")
