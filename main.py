@@ -27,17 +27,19 @@ class MyGame(arcade.Window):#самый главный класс
         self.recharge = False
 
     def setup(self): # функция нужна для создания всех и всего
-        self.land = arcade.SpriteList()
+        self.land = arcade.SpriteList() #создаём поле
         for i in sp_coordinates_field:
             #self.land.append(arcade.Sprite("images/земля.png", 0.5, center_x = i[0], center_y = i[1]))
             pass
+
+
         self.people_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
         self.player_sprite = Player() #создаём перса и кидаем ему координаты
         self.player_sprite.center_x = 400
         self.player_sprite.center_y = 50
         self.people_list.append(self.player_sprite)#кидаем перса в наш список спратов для перса
 
-        self.guards_list = arcade.SpriteList()
+        self.guards_list = arcade.SpriteList() # создвём охрану
         for i in range(len(sp_coordinates_guards)):
             x, y = sp_coordinates_guards[i]
             self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
@@ -58,8 +60,9 @@ class MyGame(arcade.Window):#самый главный класс
 
         #отрисовка всего что есть от нижних слоёв к верхним
         self.player_sprite.player_field()
-        for guard in self.guards_list:
+        for guard in self.guards_list: #временная функция, для отображения точек вокруг охраны, надо чтобы наглядно видеть действие 
             guard.guard_field()
+
         self.land.draw()
         self.bullet_list.draw()
         self.people_list.draw()
@@ -109,6 +112,7 @@ class MyGame(arcade.Window):#самый главный класс
         self.shot()
         self.bullet_list.update()
 
+        print(self.player_sprite.speed)
         #коллизии между людьми
         for people1 in self.people_list:
             people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)#проверяем взаимодейсвие 
@@ -120,7 +124,7 @@ class MyGame(arcade.Window):#самый главный класс
                 people1.center_x += cos(rad) * people1.speed
                 people1.center_y += sin(rad) * people1.speed
 
-        for bullet in self.bullet_list: # почти аналогично как и для охранs
+        for bullet in self.bullet_list: # проверка взаимодейсвия пуль и охраны
             all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
             guards_shot_list = arcade.check_for_collision_with_list(bullet, self.people_list)
             for item in all_shot_list:
