@@ -1,5 +1,6 @@
 import arcade
 import os
+from time import clock as time
 from math import atan2, sin, cos, sqrt, pi
 from Guard import Guard
 from Player import  Player
@@ -22,6 +23,8 @@ class MyGame(arcade.Window):#самый главный класс
         self.guards_sprite = None
         #arcade.set_background_color(arcade.color.AMAZON) #цвет фона
         self.land = None
+        self.time = 0     
+        self.recharge = False
 
     def setup(self): # функция нужна для создания всех и всего
         self.land = arcade.SpriteList()
@@ -53,6 +56,7 @@ class MyGame(arcade.Window):#самый главный класс
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
 
+        #отрисовка всего что есть от нижних слоёв к верхним
         self.player_sprite.player_field()
         for guard in self.guards_list:
             guard.guard_field()
@@ -60,6 +64,9 @@ class MyGame(arcade.Window):#самый главный класс
         self.bullet_list.draw()
         self.people_list.draw()
 
+        #отрисовка времени и кол-ва пуль в обойме. Позже запихну это в отдельный класс Интерфейса
+        arcade.draw_text(F'{int(self.time)//60}:{int(self.time)%60}', SCREEN_WIDTH - 100, 20, arcade.color.WHITE, 16)
+        arcade.draw_text(F':{self.player_sprite.bullet_now}', 40, 20, arcade.color.WHITE, 16)
         #отображение жизней
         hero = self.player_sprite
         draw_hp(hero.center_x, hero.center_y, hero._height, hero.max_hp, hero.hp)
@@ -69,9 +76,23 @@ class MyGame(arcade.Window):#самый главный класс
     def shot(self): #функция для стрельбы
         if self.mouse_pos['button'] == 1:
             hero = self.player_sprite
-            one_bullet = Bullet({'x': hero.center_x, 'y': hero.center_y}, self.mouse_pos)
-            self.bullet_list.append(one_bullet)
-            self.all_sprites.append(one_bullet)
+            if hero.bullet_now > 0:
+                self.recharge = False   #отмена перехарядки при выстреле
+                hero.bullet_now -= 1
+                one_bullet = Bullet({'x': hero.center_x, 'y': hero.center_y}, self.mouse_pos)
+                self.bullet_list.append(one_bullet)
+                self.all_sprites.append(one_bullet)
+                if hero.bullet_now == 0:            #авто-перезарядка, когда закончились патроны
+                    self.start_recharge = self.time
+                    self.recharge = True
+    
+    def recharge_move(self):     #перезарядка
+        if self.player_sprite.bullet_now < 6 and self.recharge:
+            if self.time - self.start_recharge > 1.0:
+                self.player_sprite.bullet_now += 1
+                self.start_recharge = self.time
+        else:
+            self.recharge = False
 
     def on_update(self, delta_time):# одна из самых важных функций, запускается 60 раз в секунду
         self.people_list.update()#обновляем все спрайты
@@ -111,7 +132,12 @@ class MyGame(arcade.Window):#самый главный класс
                 if guard.hp < 1:
                     self.people_list.remove(guard)
                     self.all_sprites.remove(guard)
-                
+            if bullet.center_x > SCREEN_WIDTH + 10 or bullet.center_x < -10 or \
+                bullet.center_y > SCREEN_HEIGHT + 10 or bullet.center_y < -10:
+                self.bullet_list.remove(bullet)
+                self.all_sprites.remove(bullet)
+        self.recharge_move()
+        self.time = time()
         self.mouse_pos['button'] = 0
 
     def on_key_press(self, key, modifiers): #передвижение перса wsad или стрелочками при нажатии

@@ -17,6 +17,7 @@ class Player(arcade.Sprite): #класс персанажа
         self.hp_bar = self.hp // 10
         self.speed = MOVEMENT_SPEED
         self.center = 0
+        self.bullet_now = 6
         self.a = []
     
     def update(self): # перемещение перса и проверки, чтобы за экран не выходил
