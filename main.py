@@ -26,13 +26,16 @@ class MyGame(arcade.Window):#самый главный класс
         self.time = 0     
         self.recharge = False
 
+
     def setup(self): # функция нужна для создания всех и всего
+        self.paint_reils_way_flag = False
+        self.way_file = 'train_way.txt'
+        self.way_list = []
+        self.read_train_way()
         self.land = arcade.SpriteList() #создаём поле
         for i in sp_coordinates_field:
             #self.land.append(arcade.Sprite("images/земля.png", 0.5, center_x = i[0], center_y = i[1]))
             pass
-
-
         self.people_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
         self.player_sprite = Player() #создаём перса и кидаем ему координаты
         self.player_sprite.center_x = 400
@@ -55,6 +58,45 @@ class MyGame(arcade.Window):#самый главный класс
         self.all_sprites.extend(self.people_list)
         self.all_sprites.extend(self.bullet_list)
 
+    def paint_reils_way(self, update=False, end=False): #мы рисуем примерный путь поезда
+        if update:
+            list1 = self.way_list
+            if len(list1) == 0:
+                self.way_list.append([self.mouse_pos['x'], self.mouse_pos['y']])
+            delta_x = (self.mouse_pos['x']-list1[-1][0])
+            delta_y = (self.mouse_pos['y']-list1[-1][1])
+            if sqrt((delta_x)**2 + (delta_y)**2) > 25:
+                angle = atan2(delta_y, delta_x)
+                print(cos(angle))
+                self.way_list.append([25*cos(angle) + list1[-1][0], 25*sin(angle) + list1[-1][1]])
+        if end:
+            list_map = []
+            file = open(self.way_file, 'w')
+            for x, y in self.way_list:
+                coord = (12.5 + 25 * int(x / 25), 12.5 + 25 * int(y / 25))
+                print(coord)
+                if coord not in list_map:
+                    if len(list_map) > 1:
+                        if abs(list_map[-2][0] - coord[0]) == 25 and  abs(list_map[-2][1] - coord[1]) == 25:
+                            print(F'между {list_map[-2]} {coord} del list_map[-1]')
+                            del list_map[-1] 
+                    list_map.append(coord)
+            for coord in list_map:
+                file.write(F'{coord[0]} {coord[1]}\n')
+            file.close()
+            print('Завершено создание карты')
+            list_map.clear()
+            self.way_list = []
+
+    def read_train_way(self):
+        #try:
+        way_file = open(self.way_file, 'r')
+        for line in way_file:
+            self.way_list.append(list(map(float, line.split())))
+        print('good read')
+        #except: pass
+
+
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
 
@@ -66,6 +108,9 @@ class MyGame(arcade.Window):#самый главный класс
         self.land.draw()
         self.bullet_list.draw()
         self.people_list.draw()
+
+        for i in range(1, len(self.way_list)):
+            arcade.draw_line(self.way_list[i-1][0], self.way_list[i-1][1], self.way_list[i][0], self.way_list[i][1], (255, 0, 255), 2)
 
         #отрисовка времени и кол-ва пуль в обойме. Позже запихну это в отдельный класс Интерфейса
         arcade.draw_text(F'{int(self.time)//60}:{int(self.time)%60}', SCREEN_WIDTH - 100, 20, arcade.color.WHITE, 16)
@@ -111,18 +156,20 @@ class MyGame(arcade.Window):#самый главный класс
         self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу
         self.shot()
         self.bullet_list.update()
+        if self.paint_reils_way_flag:
+           self.paint_reils_way(update=True)
 
-        print(self.player_sprite.speed)
+
         #коллизии между людьми
         for people1 in self.people_list:
             people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)#проверяем взаимодейсвие 
             #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
             for people2 in people_with_people: 
                 rad = atan2(people1.center_y - people2.center_y, people1.center_y - people2.center_x)
-                people2.center_x -= cos(rad) * people2.speed
-                people2.center_y -= sin(rad) * people2.speed
-                people1.center_x += cos(rad) * people1.speed
-                people1.center_y += sin(rad) * people1.speed
+                people2.change_x = -cos(rad) * people2.speed
+                people2.change_y = -sin(rad) * people2.speed
+                people1.change_x = cos(rad) * people1.speed
+                people1.change_y = sin(rad) * people1.speed
 
         for bullet in self.bullet_list: # проверка взаимодейсвия пуль и охраны
             all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
@@ -153,9 +200,12 @@ class MyGame(arcade.Window):#самый главный класс
             self.player_sprite.change_x = -MOVEMENT_SPEED
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player_sprite.change_x = MOVEMENT_SPEED
-        if abs(self.player_sprite.change_x) > 0 and abs(self.player_sprite.change_y) > 0:
-            self.player_sprite.change_x *= sqrt(2)/2
-            self.player_sprite.change_y *= sqrt(2)/2
+
+        if key == arcade.key.M:
+            self.paint_reils_way_flag = True
+            self.way_list = []
+
+
 
     def on_key_release(self, key, modifiers):#обработка, если клавишу отпустили
         if key == arcade.key.UP or key == arcade.key.DOWN:
@@ -166,9 +216,10 @@ class MyGame(arcade.Window):#самый главный класс
             self.player_sprite.change_x = 0
         elif key == arcade.key.A or key == arcade.key.D:
             self.player_sprite.change_x = 0
-        if abs(self.player_sprite.change_x) > 0 and abs(self.player_sprite.change_y) > 0:
-            self.player_sprite.change_x *= sqrt(2)/2
-            self.player_sprite.change_y *= sqrt(2)/2
+        if key == arcade.key.M:
+            self.paint_reils_way_flag = False
+            self.paint_reils_way(end=True)
+
 
     def on_mouse_motion(self, x, y, dx, dy):#если мышка двигается, то запоминаем её координаты 
         self.mouse_pos = {'x': x, 'y': y, 'dx': dx, 'dy': dy, 'button': 0}
