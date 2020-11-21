@@ -17,6 +17,8 @@ class Player(arcade.Sprite): #класс персанажа
         self.hp_bar = self.hp // 10
         self.speed = MOVEMENT_SPEED
         self.center = 0
+
+        self.bullet_now = 6
         self.first_field = [] #  . . .
                               #  . I . - точки для ближнего боя, где I - перс
                               #  . . .
@@ -33,8 +35,12 @@ class Player(arcade.Sprite): #класс персанажа
                                #  . . . . . . . . .
     
     def update(self): # перемещение перса и проверки, чтобы за экран не выходил
-        self.center_x += self.change_x
-        self.center_y += self.change_y
+        if abs(self.change_x) > 0 and abs(self.change_y) > 0:
+            self.center_x += self.change_x* sqrt(2)/2
+            self.center_y += self.change_y* sqrt(2)/2
+        else:
+            self.center_x += self.change_x
+            self.center_y += self.change_y
 
         if self.left < 0:
             self.left = 0
