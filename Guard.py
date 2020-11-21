@@ -1,7 +1,9 @@
 import arcade
 import os
 from math import sqrt
-from variables import *
+from variables import sp_field, SPRITE_SCALING, GUARD_SPEED
+from A_star_search import *
+import time
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(file_path)
@@ -12,57 +14,49 @@ class Guard(arcade.Sprite):#класс охранников
         super().__init__("images/guard.png", GUARD_SCALING, hit_box_algorithm = 'Detailed')
         self.center_x = x
         self.center_y = y
+        self.pos = (x, y)
+        self.posf = ((x - 12.5) / 25, (y - 12.5) / 25)
         self.max_hp = 5 * 60
         self.hp = self.max_hp
-        self.player_x = player_x
-        self.player_y = player_y
+        self.pos_player = (player_x, player_y)
         self.speed = GUARD_SPEED
         self.r = 0
         self.atk = 90 / 60
-        self.a = []   # 2 5 8   
-                      # 1 4 7   - порядок индексов направления в списке
-                      # 0 3 6 
-        #self.pos = (self.center_x, self.center_y)
+        self.start_time = time.time()
+        self.sp = []
+        self.count = 0
+        self.flag_time = False
     
     def update(self):
-        self.center_x = int(self.center_x) + 0.5
-        self.center_y = int(self.center_y) + 0.5
+        self.pos = (int(self.center_x) + 0.5, int(self.center_y) + 0.5)
 
-        x = self.center_x - self.player_x
-        y = self.center_y - self.player_y
+        x = self.center_x - self.pos_player[0]
+        y = self.center_y - self.pos_player[1]
         self.r = sqrt(x * x + y * y)
+        if self.r < 220:
+            if int(time.time() - self.start_time) == 1:
+                self.start_time = time.time()
+                self.asd()
+                self.count = 0
+            if len(self.sp) != 0:
+                if self.posf != self.sp[self.count]:
+                    a = self.sp[0]
+                elif self.posf == self.sp[0]:
+                    self.count += 1
+                    a = self.sp[self.count]
+                if (a[0] - self.posf[0]) > 0: # d
+                    self.center_x += self.speed
+                elif (a[0] - self.posf[0]) < 0: # a
+                    self.center_x -= self.speed
+                elif (a[1] - self.posf[1]) > 0: # w
+                    self.center_y += self.speed
+                elif (a[1] - self.posf[1]) <0: # s
+                    self.center_y -= self.speed
+        else:
+            self.start_time = time.time()
 
-        self.guard_field()
-
- #       if self.r > 220:
- #           if self.center_x < 462.5:
-  #              self.center_x += self.speed
-  #      elif self.r > 25 and self.r < 220: #  гг в зоне видимости
-  #          if self.center_x > self.player_x and self.center_y == self.player_y: #влево
-  #              self.center_x -=  self.speed
-  #          elif self.center_x > self.player_x:
-  #              self.center_x -= self.speed
-  #          if self.center_x < self.player_x and self.center_y == self.player_y: #вправо
-  #              self.center_x +=  self.speed
-  #          elif self.center_x < self.player_x:
-  #              self.center_x += self.speed
-   #         if self.center_y > self.player_y and self.center_x == self.player_x : #вверх
-   #             self.center_y -=  self.speed
-  #          elif self.center_y > self.player_y: 
-#                self.center_y -= self.speed
-#            if self.center_y < self.player_y and self.center_x == self.player_x: #вниз
- #               self.center_y +=  self.speed 
- #           elif self.center_y < self.player_y: 
- #               self.center_y += self.speed      
-
-    def guard_field(self): 
-        if (self.center_x, self.center_y) in sp_coordinates_field:
-            self.a.clear()
-            for i in sp_coordinates_field:
-                if (i[0] - self.center_x) > -37.5 and (i[0] - self.center_x) < 37.5:
-                    if (i[1] - self.center_y) > -37.5 and (i[1] - self.center_y) < 37.5:
-                        if len(self.a) < 9:
-                            self.a.append(i)
-        for i in self.a:
-            arcade.draw_point(i[0], i[1], arcade.color.RED, 3)        
-        #напоминалка!:: добавить строчку из Player для нахождения центра точки, если не будет реализовано нормальное столкновение
+    def asd(self):
+        self.posf = (int((self.pos[0] - 12.5) / 25), int((self.pos[1] - 12.5) / 25))
+        player = (int((self.pos_player[0] - 12.5) / 25), int((self.pos_player[1] -12.5) / 25))
+        self.sp = reconstruct_path(a_star_search(field, self.posf, player), self.posf, player)
+        del self.sp[0], self.sp[0]

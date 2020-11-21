@@ -54,10 +54,7 @@ class MyGame(arcade.Window):#самый главный класс
 
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
-
         self.player_sprite.player_field()
-        for guard in self.guards_list: #временная функция, для отображения точек вокруг охраны, надо чтобы наглядно видеть действие 
-            guard.guard_field()
 
         self.land.draw()
         self.bullet_list.draw()
@@ -82,8 +79,7 @@ class MyGame(arcade.Window):#самый главный класс
         for guard in self.people_list:#передаю координаты перса охранникам
             if isinstance(guard, Player):
                 continue
-            guard.player_x = self.player_sprite.center_x
-            guard.player_y = self.player_sprite.center_y
+            guard.pos_player = (self.player_sprite.center_x, self.player_sprite.center_y)
             if guard.r <= 25:
                 self.player_sprite.hp -= guard.atk
 
@@ -91,7 +87,6 @@ class MyGame(arcade.Window):#самый главный класс
         self.shot()
         self.bullet_list.update()
 
-        print(self.player_sprite.speed)
         #коллизии между людьми
         for people1 in self.people_list:
             people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)#проверяем взаимодейсвие 
