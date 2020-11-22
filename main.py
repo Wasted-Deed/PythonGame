@@ -89,13 +89,12 @@ class MyGame(arcade.Window):#самый главный класс
             self.way_list = []
 
     def read_train_way(self):
-        #try:
-        way_file = open(self.way_file, 'r')
-        for line in way_file:
-            self.way_list.append(list(map(float, line.split())))
-        print('good read')
-        #except: pass
-
+        try:
+            way_file = open(self.way_file, 'r')
+            for line in way_file:
+                self.way_list.append(list(map(float, line.split())))
+            print('good read')
+        except: pass
 
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
@@ -201,8 +200,6 @@ class MyGame(arcade.Window):#самый главный класс
         if key == arcade.key.M:
             self.paint_reils_way_flag = True
             self.way_list = []
-
-
 
     def on_key_release(self, key, modifiers):#обработка, если клавишу отпустили
         if key == arcade.key.UP or key == arcade.key.DOWN:
