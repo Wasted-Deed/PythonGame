@@ -1,6 +1,6 @@
 import arcade
 import os
-from time import clock as time
+import time
 from math import atan2, sin, cos, sqrt, pi
 from Guard import Guard
 from Player import  Player
@@ -12,49 +12,71 @@ from hp import draw_hp
 class MyGame(arcade.Window):#самый главный класс
 
     def __init__(self, width, height, title):
-        super().__init__(width, height, title)
-        #без библиотеки os спрайты почему-то не хотят браться из нашей директории, они как-то привязаны к своему сайту
+        super().__init__(width, height, title, resizable=True)
+        self.center_window()
+       
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
-        #переменные спрайта для перса
+
         self.player_sprite = None
-        #переменные спрайта для охраны
         self.people_list = None
         self.guards_sprite = None
-        #arcade.set_background_color(arcade.color.AMAZON) #цвет фона
+        self.blocks = None
         self.land = None
-        self.time = 0     
+        self.time = 0
+        self.start_time = time.time()
         self.recharge = False
 
+    def setup(self):
+        # препятствия
+        self.blocks = arcade.SpriteList()
+        a = arcade.load_texture("images/obstacles/blue_barrel.png", width=16, height=28, hit_box_algorithm="Detailed")
+        b = arcade.load_texture("images/obstacles/red_barrel.png", width=16, height=28, hit_box_algorithm="Detailed")
+        c = arcade.load_texture("images/obstacles/green_barrels.png", width=30, height=28, hit_box_algorithm="Detailed")
+        self.block_1 = arcade.Sprite(center_x = 550, center_y = 300)
+        self.block_1.texture = a
+        self.block_2 = arcade.Sprite(center_x = 580, center_y = 330)
+        self.block_2.texture = b
+        self.block_3 = arcade.Sprite(center_x = 565, center_y = 280)
+        self.block_3.texture = c
+        self.blocks.append(self.block_1)
+        self.blocks.append(self.block_2)
+        self.blocks.append(self.block_3)
 
-    def setup(self): # функция нужна для создания всех и всего
+        #путь поезда
         self.paint_reils_way_flag = False
         self.way_file = 'train_way.txt'
         self.way_list = []
         self.read_train_way()
-        self.land = arcade.SpriteList() #создаём поле
+
+        #поле
+        self.land = arcade.SpriteList()
         for i in sp_coordinates_field:
-            #self.land.append(arcade.Sprite("images/земля.png", 0.5, center_x = i[0], center_y = i[1]))
-            pass
-        self.people_list = arcade.SpriteList() # присваиваем Sprite_List, чтобы обрабатывать как спрайт
-        self.player_sprite = Player() #создаём перса и кидаем ему координаты
+            self.land.append(arcade.Sprite("images/земля.png", 1, center_x = i[0], center_y = i[1]))
+
+        #персонаж
+        self.people_list = arcade.SpriteList()
+        self.player_sprite = Player() 
         self.player_sprite.center_x = 400
         self.player_sprite.center_y = 50
-        self.people_list.append(self.player_sprite)#кидаем перса в наш список спратов для перса
+        self.people_list.append(self.player_sprite)
 
-        self.guards_list = arcade.SpriteList() # создвём охрану
+        #охрана
+        self.guards_list = arcade.SpriteList()
         for i in range(len(sp_coordinates_guards)):
             x, y = sp_coordinates_guards[i]
-            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
+            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y, self.blocks)
+            self.guards_sprite.guard_sprite = self.guards_sprite
             self.guards_list.append(self.guards_sprite)
             self.people_list.append(self.guards_sprite)
 
-        self.bullet_list = arcade.SpriteList()#также создаём пули
+        #пули
+        self.bullet_list = arcade.SpriteList()
         hero = self.player_sprite
         self.mouse_pos = {'x': hero.center_x, 'y': hero.center_y, 'dx': 0, 'dy': 0, 'button': 0} #задаём координаты мышки
 
-
-        self.all_sprites = arcade.SpriteList() #делаем общий для всех список, чтобы было легче обрабатывать
+        #общий список
+        self.all_sprites = arcade.SpriteList()
         self.all_sprites.extend(self.people_list)
         self.all_sprites.extend(self.bullet_list)
 
@@ -96,15 +118,14 @@ class MyGame(arcade.Window):#самый главный класс
             print('good read')
         except: pass
 
-    def on_draw(self): #рисуем!))
-        arcade.start_render()# эта команда начинает процесс рисовки
-
+    def on_draw(self):
+        arcade.start_render()
         #отрисовка всего что есть от нижних слоёв к верхним
-        self.player_sprite.player_field()
 
         self.land.draw()
         self.bullet_list.draw()
         self.people_list.draw()
+        self.blocks.draw()
 
         for i in range(1, len(self.way_list)):
             arcade.draw_line(self.way_list[i-1][0], self.way_list[i-1][1], self.way_list[i][0], self.way_list[i][1], (255, 0, 255), 2)
@@ -118,7 +139,7 @@ class MyGame(arcade.Window):#самый главный класс
         for guard in self.people_list:
             draw_hp(guard.center_x, guard.center_y, guard._height, guard.max_hp, guard.hp)
 
-    def shot(self): #функция для стрельбы
+    def shot(self):
         if self.mouse_pos['button'] == 1:
             hero = self.player_sprite
             if hero.bullet_now > 0:
@@ -131,7 +152,7 @@ class MyGame(arcade.Window):#самый главный класс
                     self.start_recharge = self.time
                     self.recharge = True
     
-    def recharge_move(self):     #перезарядка
+    def recharge_move(self):
         if self.player_sprite.bullet_now < 6 and self.recharge:
             if self.time - self.start_recharge > 1.0:
                 self.player_sprite.bullet_now += 1
@@ -139,15 +160,11 @@ class MyGame(arcade.Window):#самый главный класс
         else:
             self.recharge = False
 
-    def on_update(self, delta_time):# одна из самых важных функций, запускается 60 раз в секунду
-        self.people_list.update()#обновляем все спрайты
+    def on_update(self, delta_time):
+        self.people_list.update()
 
-        for guard in self.people_list:#передаю координаты перса охранникам
-            if isinstance(guard, Player):
-                continue
+        for guard in self.guards_list:
             guard.pos_player = (self.player_sprite.center_x, self.player_sprite.center_y)
-            if guard.r <= 25:
-                self.player_sprite.hp -= guard.atk
 
         self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу
         self.shot()
@@ -184,7 +201,7 @@ class MyGame(arcade.Window):#самый главный класс
                 self.bullet_list.remove(bullet)
                 self.all_sprites.remove(bullet)
         self.recharge_move()
-        self.time = time()
+        self.time = time.time()
         self.mouse_pos['button'] = 0
 
     def on_key_press(self, key, modifiers): #передвижение перса wsad или стрелочками при нажатии
@@ -213,7 +230,6 @@ class MyGame(arcade.Window):#самый главный класс
         if key == arcade.key.M:
             self.paint_reils_way_flag = False
             self.paint_reils_way(end=True)
-
 
     def on_mouse_motion(self, x, y, dx, dy):#если мышка двигается, то запоминаем её координаты 
         self.mouse_pos = {'x': x, 'y': y, 'dx': dx, 'dy': dy, 'button': 0}

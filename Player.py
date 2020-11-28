@@ -19,20 +19,6 @@ class Player(arcade.Sprite): #класс персанажа
         self.center = 0
 
         self.bullet_now = 6
-        self.first_field = [] #  . . .
-                              #  . I . - точки для ближнего боя, где I - перс
-                              #  . . .
-
-
-        self.second_field = [] #  . . . . . . . . .
-                               #  .               .
-                               #  .               .
-                               #  .               .
-                               #  .       I       .
-                               #  .               .
-                               #  .               .
-                               #  .               .
-                               #  . . . . . . . . .
     
     def update(self): # перемещение перса и проверки, чтобы за экран не выходил
         if abs(self.change_x) > 0 and abs(self.change_y) > 0:
@@ -52,26 +38,7 @@ class Player(arcade.Sprite): #класс персанажа
         elif self.top > SCREEN_HEIGHT - 1:
             self.top = SCREEN_HEIGHT - 1
         
-        self.player_field()
 
     def update_angle(self, mouse_pos):# перс следит за мышкой
         self.radians = atan2(mouse_pos['y'] - self.center_y, mouse_pos['x'] - self.center_x)
         
-    def player_field(self):
-        self.center= (12.5 + 25 * int(self.center_x / 25), 12.5 + 25 * int(self.center_y / 25))
-        self.first_field.clear()
-        self.second_field.clear()
-        for i in range(-1, 2, 2):
-            self.first_field.append((self.center[0] + 25*i, self.center[1] + 25*i))
-            self.first_field.append((self.center[0] + 25*i, self.center[1]))
-            self.first_field.append((self.center[0], self.center[1] + 25*i))
-            self.first_field.append((self.center[0] - 25*i, self.center[1] + 25*i))
-        
-        for x in range(-4, 5, 8):
-            for y in range(-4, 5):
-                self.second_field.append((self.center[0] + 25*x, self.center[1] + 25*y))
-        for y in range(-4, 5, 8):
-            for x in range(-3, 4):
-                self.second_field.append((self.center[0] + 25*x, self.center[1] + 25*y))
-        for i in self.second_field:
-            arcade.draw_point(i[0], i[1], arcade.color.BLUE, 2)

@@ -99,3 +99,14 @@ diagram4.weights = {loc: 5 for loc in [(3, 4), (3, 5), (4, 1), (4, 2),
 field = SquareGrid(int(SCREEN_WIDTH/25), int(SCREEN_HEIGHT/25)) #размеры графа
 field.walls = [] # препядствия
 field.weights = {} # если надо, то выбранным координам добавить больше веса
+
+a = (10, 10)
+b = (20, 20)
+D = 1
+D2 = 1
+dx = abs(a[0] - b[0])
+dy = abs(a[1] - b[1])
+print(D * (dx + dy) + (D2 - 2 * D) * min(dx, dy))
+(x1, y1) = a
+(x2, y2) = b
+print((abs(x1 - x2) + abs(y1 - y2)))
