@@ -10,13 +10,15 @@ os.chdir(file_path)
 class Player(arcade.Sprite): #класс персанажа
     def __init__(self):
         HERO_SCALING = 1.0 *SPRITE_SCALING #отдельная переменная для размера срайта, если захотим отдельно от всех уменьшить\увеличить
-        super().__init__("images/hero.png", HERO_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
+        self.filename = "images/hero.png"
+        super().__init__(self.filename, HERO_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
                                                         #чтобы спрайт блок охватывал именно очертания картинки
         self.max_hp = 15 * 60 #хп
         self.hp = self.max_hp
         self.hp_bar = self.hp // 10
         self.speed = MOVEMENT_SPEED
         self.center = 0
+       
 
         self.bullet_now = 6
         self.first_field = [] #  . . .

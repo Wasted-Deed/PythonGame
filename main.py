@@ -1,5 +1,6 @@
 import arcade
 import os
+from PIL import Image
 from time import clock as time
 from math import atan2, sin, cos, sqrt, pi
 from Guard import Guard
@@ -40,6 +41,7 @@ class MyGame(arcade.Window):#самый главный класс
         self.player_sprite = Player() #создаём перса и кидаем ему координаты
         self.player_sprite.center_x = 400
         self.player_sprite.center_y = 50
+        change_hit_box(self.player_sprite)
         self.people_list.append(self.player_sprite)#кидаем перса в наш список спратов для перса
 
         self.guards_list = arcade.SpriteList() # создвём охрану
@@ -58,6 +60,7 @@ class MyGame(arcade.Window):#самый главный класс
         self.all_sprites.extend(self.people_list)
         self.all_sprites.extend(self.bullet_list)
 
+    #длинная функция создания пути поезда
     def paint_reils_way(self, update=False, end=False): #мы рисуем примерный путь поезда
         if update:
             list1 = self.way_list
@@ -89,16 +92,20 @@ class MyGame(arcade.Window):#самый главный класс
             self.way_list = []
 
     def read_train_way(self):
-        #try:
-        way_file = open(self.way_file, 'r')
-        for line in way_file:
-            self.way_list.append(list(map(float, line.split())))
-        print('good read')
-        #except: pass
+        try:
+            way_file = open(self.way_file, 'r')
+            for line in way_file:
+                self.way_list.append(list(map(float, line.split())))
+            print('good read')
+        except: 
+            print('ошибка чтения')
 
 
     def on_draw(self): #рисуем!))
         arcade.start_render()# эта команда начинает процесс рисовки
+
+        #отрисовка пути поезда
+        arcade.draw_line_strip(self.way_list, (255, 0, 0))
 
         #отрисовка всего что есть от нижних слоёв к верхним
         self.player_sprite.player_field()
@@ -108,24 +115,26 @@ class MyGame(arcade.Window):#самый главный класс
         self.land.draw()
         self.bullet_list.draw()
         self.people_list.draw()
-
-        for i in range(1, len(self.way_list)):
-            arcade.draw_line(self.way_list[i-1][0], self.way_list[i-1][1], self.way_list[i][0], self.way_list[i][1], (255, 0, 255), 2)
+        
+        
 
         #отрисовка времени и кол-ва пуль в обойме. Позже запихну это в отдельный класс Интерфейса
         arcade.draw_text(F'{int(self.time)//60}:{int(self.time)%60}', SCREEN_WIDTH - 100, 20, arcade.color.WHITE, 16)
         arcade.draw_text(F':{self.player_sprite.bullet_now}', 40, 20, arcade.color.WHITE, 16)
+        
         #отображение жизней
         hero = self.player_sprite
         draw_hp(hero.center_x, hero.center_y, hero._height, hero.max_hp, hero.hp)
         for guard in self.people_list:
             draw_hp(guard.center_x, guard.center_y, guard._height, guard.max_hp, guard.hp)
 
+        hero.draw_hit_box()
+
     def shot(self): #функция для стрельбы
         if self.mouse_pos['button'] == 1:
             hero = self.player_sprite
             if hero.bullet_now > 0:
-                self.recharge = False   #отмена перехарядки при выстреле
+                self.recharge = False   #отмена перезарядки при выстреле
                 hero.bullet_now -= 1
                 one_bullet = Bullet({'x': hero.center_x, 'y': hero.center_y}, self.mouse_pos)
                 self.bullet_list.append(one_bullet)
@@ -135,8 +144,9 @@ class MyGame(arcade.Window):#самый главный класс
                     self.recharge = True
     
     def recharge_move(self):     #перезарядка
+        time_recharge = 1.0 #время зарядки одной пули
         if self.player_sprite.bullet_now < 6 and self.recharge:
-            if self.time - self.start_recharge > 1.0:
+            if self.time - self.start_recharge > time_recharge:
                 self.player_sprite.bullet_now += 1
                 self.start_recharge = self.time
         else:
@@ -234,6 +244,10 @@ def main():# собственно запуск
     window.setup()
     arcade.run()
 
+def change_hit_box(this_sprite): 
+    name_img = this_sprite.filename
+    width, height = Image.open(name_img).size
+    this_sprite.set_hit_box([(width//2, -height//2), (-width//2, -height//2)])
 
 if __name__ == "__main__":# проверка, что запускаем именно из main
     main()
