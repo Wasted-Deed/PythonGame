@@ -31,19 +31,11 @@ class MyGame(arcade.Window):#самый главный класс
 
     def setup(self):
         # препятствия
-        self.blocks = arcade.SpriteList()
-        a = arcade.load_texture("images/obstacles/blue_barrel.png", width=16, height=28, hit_box_algorithm="Detailed")
-        b = arcade.load_texture("images/obstacles/red_barrel.png", width=16, height=28, hit_box_algorithm="Detailed")
-        c = arcade.load_texture("images/obstacles/green_barrels.png", width=30, height=28, hit_box_algorithm="Detailed")
-        self.block_1 = arcade.Sprite(center_x = 550, center_y = 300)
-        self.block_1.texture = a
-        self.block_2 = arcade.Sprite(center_x = 580, center_y = 330)
-        self.block_2.texture = b
-        self.block_3 = arcade.Sprite(center_x = 565, center_y = 280)
-        self.block_3.texture = c
+        self.blocks = arcade.SpriteList(use_spatial_hash=True)
+        self.block_1 = arcade.Sprite("images/obstacles/green_barrels.png", center_x=550, center_y= 350)
+        self.blovk_2 = arcade.Sprite("images/obstacles/green_barrels.png", center_x=550, center_y= 330)
         self.blocks.append(self.block_1)
-        self.blocks.append(self.block_2)
-        self.blocks.append(self.block_3)
+        self.blocks.append(self.blovk_2)
 
         #путь поезда
         self.paint_reils_way_flag = False
@@ -71,8 +63,16 @@ class MyGame(arcade.Window):#самый главный класс
         self.guards_list = arcade.SpriteList()
         for i in range(len(sp_coordinates_guards)):
             x, y = sp_coordinates_guards[i]
-            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y, self.blocks)
-            self.guards_sprite.guard_sprite = self.guards_sprite
+            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
+            self.guards_sprite.moving_sprite = self.guards_sprite
+            self.guards_sprite.wall = self.blocks
+            self.guards_sprite.barrier_list = arcade.AStarBarrierList(self.guards_sprite,
+                                                                    self.blocks,
+                                                                    25,
+                                                                    -25 * 2,
+                                                                    25 * 40,
+                                                                    -25 * 2,
+                                                                    25 * 24)
             self.guards_list.append(self.guards_sprite)
             self.people_list.append(self.guards_sprite)
 
@@ -146,7 +146,7 @@ class MyGame(arcade.Window):#самый главный класс
         #    arcade.draw_line(self.way_list[i-1][0], self.way_list[i-1][1], self.way_list[i][0], self.way_list[i][1], (255, 0, 255), 2)
 
         #отрисовка времени и кол-ва пуль в обойме. Позже запихну это в отдельный класс Интерфейса
-        arcade.draw_text(F'{int(self.time)//60}:{int(self.time)%60}', SCREEN_WIDTH - 100, 20, arcade.color.WHITE, 16)
+        arcade.draw_text(F'{int(self.time-self.start_time)//60}:{int(self.time-self.start_time)%60}', SCREEN_WIDTH - 100, 20, arcade.color.WHITE, 16)
         arcade.draw_text(F':{self.player_sprite.bullet_now}', 40, 20, arcade.color.WHITE, 16)
         
         #отображение жизней
@@ -156,6 +156,9 @@ class MyGame(arcade.Window):#самый главный класс
             draw_hp(guard.center_x, guard.center_y, guard._height, guard.max_hp, guard.hp)
         for thing in self.all_sprites:
             thing.draw_hit_box()
+
+        if self.guards_sprite.path:
+            arcade.draw_line_strip(self.guards_sprite.path, arcade.color.BLUE, 2)
 
         self.train.draw_all()
 
@@ -197,7 +200,7 @@ class MyGame(arcade.Window):#самый главный класс
 
         #коллизии между людьми
         for people1 in self.people_list:
-            people_with_people = arcade.check_for_collision_with_list(people1, self.player_sprite)#проверяем взаимодейсвие 
+            people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)#проверяем взаимодейсвие 
             #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
             for people2 in people_with_people: 
                 rad = atan2(people1.center_y - people2.center_y, people1.center_y - people2.center_x)
