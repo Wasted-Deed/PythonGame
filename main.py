@@ -50,7 +50,7 @@ class MyGame(arcade.Window):#самый главный класс
         self.people_list = arcade.SpriteList()
         self.player_sprite = Player() 
         self.player_sprite.center_x = 400
-        self.player_sprite.center_y = 50
+        self.player_sprite.center_y = 50       
         self.people_list.append(self.player_sprite)
 
         #охрана
