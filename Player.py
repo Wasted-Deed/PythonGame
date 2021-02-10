@@ -10,15 +10,19 @@ os.chdir(file_path)
 class Player(arcade.Sprite): #класс персанажа
     def __init__(self):
         HERO_SCALING = 1.0 *SPRITE_SCALING #отдельная переменная для размера срайта, если захотим отдельно от всех уменьшить\увеличить
-        super().__init__("images/hero.png", HERO_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
+        self.image = "images/hero.png"
+        super().__init__(self.image, HERO_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
                                                         #чтобы спрайт блок охватывал именно очертания картинки
         self.max_hp = 15 * 60 #хп
         self.hp = self.max_hp
         self.hp_bar = self.hp // 10
         self.speed = MOVEMENT_SPEED
         self.center = 0
-
         self.bullet_now = 6
+        self.flag_change_x = 0
+        self.flag_change_y = 0
+        print(self.width, self.height)
+        #self.center_hit_box = (self.center_x, self.center_y)
     
     def update(self): # перемещение перса и проверки, чтобы за экран не выходил
         if abs(self.change_x) > 0 and abs(self.change_y) > 0:
@@ -37,6 +41,11 @@ class Player(arcade.Sprite): #класс персанажа
             self.bottom = 0
         elif self.top > SCREEN_HEIGHT - 1:
             self.top = SCREEN_HEIGHT - 1
+        
+        self.change_x = self.flag_change_x * self.speed
+        self.change_y = self.flag_change_y * self.speed
+        
+        
         
 
     def update_angle(self, mouse_pos):# перс следит за мышкой
