@@ -9,13 +9,14 @@ TRAIN_SPEED = 400 / 60 * SPRITE_SCALING
 GUARD_SPEED = 60 / 30 *SPRITE_SCALING
 s = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
-sp_coordinates_guards = [(337, 337)]  #координаты охранников
+sp_coordinates_guards = [(337, 337), (450, 450)]  #координаты охранников
+sp_coordinates_obstacles = [(500, 350), (500, 400)]
 
-def render_field(size):
-    a = []
-    for i in range(int(size[0]/10) + 1):
-        for j in range(int(size[1]/10) + 1):
-            a.append((10*i, 10*j))
-    return a
+#def render_field(size):
+#    a = []
+#    for i in range(int(size[0]/10) + 1):
+#        for j in range(int(size[1]/10) + 1):
+#            a.append((10*i, 10*j))
+#   return a
     
-sp_coordinates_field = render_field(s)
+#sp_coordinates_field = render_field(s)

@@ -5,11 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "java",
+            "name": "Launch UseSuper",
+            "request": "launch",
+            "mainClass": "UseSuper",
+            "projectName": "PythonGame_6ac1eba"
+        },
+        {
             "name": "Python: Debug Console",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "internalConsole"
-       }
+        }
     ]
 }

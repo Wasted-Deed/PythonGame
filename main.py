@@ -1,6 +1,7 @@
 import arcade
 import os
-import time 
+import time
+from random import randint 
 from PIL import Image
 from math import atan2, sin, cos, sqrt, pi
 from Guard import Guard
@@ -12,8 +13,11 @@ from Train import Train
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(file_path)
+#изменить отсчёт времени
 #изменить стенки для героя 
 #добавить охранникам стрельбу
+#переработать стрельбу - зависает на первом выстреле
+#увеличить хит-боксы, ибо выстрелы взаимодействуют с ними 
 
 class MenuView(arcade.View):#меню
 
@@ -44,14 +48,17 @@ class GameView(arcade.View):#игра
         self.time = 0
         self.start_time = time.time()
         self.recharge = False
+        self.textures = []
 
     def setup(self):
         # препятствия
-        self.blocks = arcade.SpriteList(use_spatial_hash=True)
-        self.block_1 = arcade.Sprite("images/obstacles/green_barrels.png", center_x=550, center_y= 350)
-        self.blovk_2 = arcade.Sprite("images/obstacles/green_barrels.png", center_x=550, center_y= 230)
-        self.blocks.append(self.block_1)
-        self.blocks.append(self.blovk_2)
+        self.blocks = arcade.SpriteList(use_spatial_hash=True, is_static=True)
+        for block in sp_coordinates_obstacles:
+            number = randint(1, 2)
+            self.blocks.append(arcade.Sprite("images/obstacles/2-%d.png" % number, 1, center_x=block[0], center_y= block[1],
+                                            hit_box_algorithm = "Detailed"))
+            
+
 
         #путь поезда
         self.paint_reils_way_flag = False
@@ -76,8 +83,7 @@ class GameView(arcade.View):#игра
         self.guards_list = arcade.SpriteList()
         for i in range(len(sp_coordinates_guards)):
             x, y = sp_coordinates_guards[i]
-            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
-            self.guards_sprite.wall = self.blocks
+            self.guards_sprite = Guard(x, y)
             self.guards_sprite.barrier_list = arcade.AStarBarrierList(self.guards_sprite,
                                                                     self.blocks,
                                                                     20,
@@ -167,10 +173,10 @@ class GameView(arcade.View):#игра
             draw_hp(guard.center_x, guard.center_y, guard._height, guard.max_hp, guard.hp)
         for thing in self.all_sprites:
             thing.draw_hit_box()
-
+        #отображение пути до гг
         for guard in self.guards_list:
             if guard.path:
-                arcade.draw_line_strip(guard.path, arcade.color.BLUE, 2)
+                    arcade.draw_line_strip(guard.path, arcade.color.BLUE, 2)
 
         self.train.draw_all()
 
@@ -201,11 +207,15 @@ class GameView(arcade.View):#игра
         self.people_list.update()
 
         for guard in self.guards_list:
-            guard.pos_player = (self.player_sprite.center_x, self.player_sprite.center_y)
-            self.path = arcade.astar_calculate_path(guard.position,
-                                                    guard.pos_player,
-                                                    guard.barrier_list,
-                                                    diagonal_movement=False)
+            distant = int(sqrt((guard.center_x - self.player_sprite.center_x)**2 + (guard.center_y - self.player_sprite.center_y)**2))
+            if (distant > 100 and distant < 150) and arcade.has_line_of_sight(guard.position, self.player_sprite.position, self.blocks, 200):
+                guard.path = arcade.astar_calculate_path(guard.position,
+                                                        self.player_sprite.position,
+                                                        guard.barrier_list,
+                                                        diagonal_movement=False)
+            else:
+                guard.path = []
+
 
         #self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу
         self.shot()
@@ -314,11 +324,11 @@ class GameOverView(arcade.View):#последнее окно
             self.window.show_view(menu_view)
 
 def change_hit_box(this_sprite): 
-    print(this_sprite)
+    #print(this_sprite)
     width, height = Image.open(this_sprite.image).size#this_sprite.width, this_sprite.height
     #this_sprite.width, this_sprite.height = width, height
     this_sprite.set_hit_box([(width//2, -height//2), (-width//2, -height//2), (-width//2, -2.5*height//10), (width//2, -2.5*height//10)])
-    print(this_sprite.center_x, this_sprite.center_y)
+    #print(this_sprite.center_x, this_sprite.center_y)
     #self.center_hit_box = (this_sprite.center_x, this_sprite.center_y-2*height//5)
 
 def main():# собственно запуск
