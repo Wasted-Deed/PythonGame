@@ -43,6 +43,7 @@ class Guard(arcade.Sprite):#класс охранников
             self.path = []
             self.count = 0
         if self.path != None:
+            self.speed = GUARD_SPEED
             if len(self.path) > 2 and self.count <  len(self.path):
                 if self.position != self.path[self.count]:
                     a = self.path[self.count]
@@ -57,4 +58,6 @@ class Guard(arcade.Sprite):#класс охранников
                     self.center_y += self.speed
                 elif (a[1] - self.position[1]) <0: # s
                     self.center_y -= self.speed
+        else:
+            self.speed = 0
 

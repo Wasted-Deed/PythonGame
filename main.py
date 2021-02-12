@@ -45,12 +45,12 @@ class MyGame(arcade.Window):#самый главный класс
         
         #поезд
         self.train = Train(0, 100, 6)
-
+        '''
         #поле
         self.land = arcade.SpriteList()
         for i in sp_coordinates_field:
             self.land.append(arcade.Sprite("images/земля.png", 1, center_x = i[0], center_y = i[1]))
-
+        '''
         #персонаж
         self.people_list = arcade.SpriteList()
         self.player_sprite = Player() 
@@ -80,6 +80,8 @@ class MyGame(arcade.Window):#самый главный класс
         self.bullet_list = arcade.SpriteList()
         hero = self.player_sprite
         self.mouse_pos = {'x': hero.center_x, 'y': hero.center_y, 'dx': 0, 'dy': 0, 'button': 0} #задаём координаты мышки
+        #для работы перезарядки
+        self.start_recharge = self.time
 
         #общий список
         self.all_sprites = arcade.SpriteList()
@@ -137,7 +139,7 @@ class MyGame(arcade.Window):#самый главный класс
 
         #отрисовка всего что есть от нижних слоёв к верхним
 
-        self.land.draw()
+        #self.land.draw()
         self.bullet_list.draw()
         self.people_list.draw()
         self.blocks.draw()
@@ -162,27 +164,75 @@ class MyGame(arcade.Window):#самый главный класс
 
         self.train.draw_all()
 
-    def shot(self): #функция для стрельбы
-        if self.mouse_pos['button'] == 1:
-            hero = self.player_sprite
+    def shot(self, shooter_sprite): #функция для стрельбы
+        if shooter_sprite == self.player_sprite:
+            hero = shooter_sprite
             if hero.bullet_now > 0:
                 self.recharge = False   #отмена перезарядки при выстреле
                 hero.bullet_now -= 1
-                one_bullet = Bullet({'x': hero.center_x, 'y': hero.center_y}, self.mouse_pos)
+                one_bullet = Bullet(shooter_sprite, {'x': hero.center_x, 'y': hero.center_y}, self.mouse_pos)
                 self.bullet_list.append(one_bullet)
                 self.all_sprites.append(one_bullet)
-                if hero.bullet_now == 0:            #авто-перезарядка, когда закончились патроны
-                    self.start_recharge = self.time
-                    self.recharge = True
+            elif hero.bullet_now == 0:            #авто-перезарядка, когда закончились патроны
+                self.start_recharge = self.time
+                self.recharge = True
+        else:
+            pass
     
     def recharge_move(self):     #перезарядка
-        time_recharge = 1.0 #время зарядки одной пули
+        print(self.time-self.start_recharge)
+        time_recharge = 3.0 #время зарядки одной пули
+        if self.time - self.start_recharge > time_recharge+0.03: 
+            self.start_recharge = self.time
         if self.player_sprite.bullet_now < 6 and self.recharge:
-            if self.time - self.start_recharge > time_recharge:
+            if self.time - self.start_recharge >= time_recharge:
                 self.player_sprite.bullet_now += 1
                 self.start_recharge = self.time
         else:
             self.recharge = False
+
+    def collision(self):
+        #коллизии между людьми (взаимное отталкивание)
+        for people1 in self.people_list:    # Временно стоят все спрайты. Далее заменить на people_list
+            people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)
+
+            for people2 in people_with_people: 
+                rad = atan2(people1.center_y - people2.center_y, people1.center_x - people2.center_x)
+                
+                people1.hitbox_y = people1.center_y - 3* people1.height//8
+                people2.hitbox_y = people2.center_y - 3* people2.height//8
+
+                # отталкивание по горизонтали и вертикали раздельно. По горизонтали, при нецентральном ударе
+                # может происходить смещение по горизонтальи до пракращения взаимодействия
+                print(abs(people1.hitbox_y - people2.hitbox_y), abs(people1.height - people2.height)//2)
+                if abs(people1.hitbox_y - people2.hitbox_y) >= abs(people1.height - people2.height)//2: 
+                    people2.center_y += -sin(rad)/abs(sin(rad)) * people1.speed
+                    people1.center_y += sin(rad)/abs(sin(rad)) * people2.speed
+                elif abs(people1.center_x - people2.center_x) >= abs(people1.width - people1.width)//2:    
+                    people2.center_x += -cos(rad)/abs(cos(rad)) * people1.speed
+                    people1.center_x += cos(rad)/abs(cos(rad)) * people2.speed
+        
+        
+        for bullet in self.bullet_list: # проверка взаимодейсвия пуль и охраны
+            all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
+            guards_shot_list = arcade.check_for_collision_with_list(bullet, self.people_list)
+            for item in all_shot_list:
+                if item != bullet.shooter_sprite:
+                    self.bullet_list.remove(bullet)
+                    self.all_sprites.remove(bullet)
+                    if item in guards_shot_list:
+                        guard = item
+                        guard.hp -= bullet.atk
+                        if guard.hp < 1:
+                            self.people_list.remove(guard)
+                            self.all_sprites.remove(guard)
+                    break
+            #for guard in guards_shot_list:
+                
+            if bullet.center_x > SCREEN_WIDTH + 10 or bullet.center_x < -10 or \
+                bullet.center_y > SCREEN_HEIGHT + 10 or bullet.center_y < -10:
+                self.bullet_list.remove(bullet)
+                self.all_sprites.remove(bullet)
 
     def on_update(self, delta_time):
         self.train.update()
@@ -192,92 +242,57 @@ class MyGame(arcade.Window):#самый главный класс
             guard.pos_player = (self.player_sprite.center_x, self.player_sprite.center_y)
 
         #self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу
-        self.shot()
+        if self.mouse_pos['button'] == 1:
+            self.shot(self.player_sprite)
         self.bullet_list.update()
         if self.paint_reils_way_flag:
            self.paint_reils_way(update=True)
 
-
-        #коллизии между людьми
-        for people1 in self.people_list:
-            people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)#проверяем взаимодейсвие 
-            #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
-            for people2 in people_with_people: 
-                rad = atan2(people1.center_y - people2.center_y, people1.center_y - people2.center_x)
-
-                if abs(people1.width - people1.width)//2 <= abs(people1.center_x - people2.center_x): 
-                    # people2.change_x = -cos(rad) * people2.speed
-                    people2.flag_change_x = 0 #-sin(rad) * people2.speed
-                    people2.center_x += -sin(rad)/abs(sin(rad)) * people1.speed
-                    #people1.change_x = cos(rad) * people1.speed
-                    people1.flag_change_x = 0#sin(rad) * people1.speed
-                    people1.center_x += sin(rad)/abs(sin(rad)) * people2.speed
-                if abs(people1.height - people1.height)//2 <= abs(people1.center_y - people2.center_y): 
-                    # people2.change_x = -cos(rad) * people2.speed
-                    people2.flag_change_y = 0 #-sin(rad) * people2.speed
-                    people2.center_y += -sin(rad)/abs(sin(rad)) * people1.speed
-                    #people1.change_x = cos(rad) * people1.speed
-                    people1.flag_change_y = 0#sin(rad) * people1.speed
-                    people1.center_y += sin(rad)/abs(sin(rad)) * people2.speed
-                '''
-                people1.change_x = 0
-                people1.change_y = 0
-                people2.change_x = 0
-                people2.change_y = 0
-                '''
-        for bullet in self.bullet_list: # проверка взаимодейсвия пуль и охраны
-            all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
-            guards_shot_list = arcade.check_for_collision_with_list(bullet, self.people_list)
-            for item in all_shot_list:
-                self.bullet_list.remove(bullet)
-                self.all_sprites.remove(bullet)
-                break
-            for guard in guards_shot_list:
-                guard.hp -= bullet.atk
-                if guard.hp < 1:
-                    self.people_list.remove(guard)
-                    self.all_sprites.remove(guard)
-            if bullet.center_x > SCREEN_WIDTH + 10 or bullet.center_x < -10 or \
-                bullet.center_y > SCREEN_HEIGHT + 10 or bullet.center_y < -10:
-                self.bullet_list.remove(bullet)
-                self.all_sprites.remove(bullet)
+        self.collision()
+        
         self.recharge_move()
         self.time = time.time()
         self.mouse_pos['button'] = 0
 
     def on_key_press(self, key, modifiers): #передвижение перса wsad или стрелочками при нажатии
         if key == arcade.key.UP or key == arcade.key.W:
-            self.player_sprite.flag_change_y = 1
-        elif key == arcade.key.DOWN or key == arcade.key.S:
-            self.player_sprite.flag_change_y = -1
+            self.player_sprite.y_sp.append(1)
+        if key == arcade.key.DOWN or key == arcade.key.S:
+            self.player_sprite.y_sp.append(-1)
 
         if key == arcade.key.LEFT or key == arcade.key.A:
-            self.player_sprite.flag_change_x = -1
-        elif key == arcade.key.RIGHT or key == arcade.key.D:
-            self.player_sprite.flag_change_x = 1
+            self.player_sprite.x_sp.append(-1)
+        if key == arcade.key.RIGHT or key == arcade.key.D:
+            self.player_sprite.x_sp.append(1)
 
         if key == arcade.key.M:
             self.paint_reils_way_flag = True
             self.way_list = []
 
     def on_key_release(self, key, modifiers):#обработка, если клавишу отпустили
-        if key == arcade.key.UP or key == arcade.key.DOWN:
-            self.player_sprite.flag_change_y = 0
-        elif key == arcade.key.W or key == arcade.key.S:
-            self.player_sprite.flag_change_y = 0
-        elif key == arcade.key.LEFT or key == arcade.key.RIGHT:
-            self.player_sprite.flag_change_x = 0
-        elif key == arcade.key.A or key == arcade.key.D:
-            self.player_sprite.flag_change_x = 0
+        player = self.player_sprite
+        if key == arcade.key.UP or key == arcade.key.W :
+            del player.y_sp[player.y_sp.index(1)]
+        if key == arcade.key.DOWN or key == arcade.key.S:
+            del player.y_sp[player.y_sp.index(-1)]
+        if key == arcade.key.LEFT or key == arcade.key.A :
+            del player.x_sp[player.x_sp.index(-1)]
+        if key == arcade.key.RIGHT or key == arcade.key.D:
+            del player.x_sp[player.x_sp.index(1)]
         if key == arcade.key.M:
             self.paint_reils_way_flag = False
             self.paint_reils_way(end=True)
+        if key == arcade.key.R:
+            self.start_recharge = self.time
+            self.recharge = True
 
     def on_mouse_motion(self, x, y, dx, dy):#если мышка двигается, то запоминаем её координаты 
         self.mouse_pos = {'x': x, 'y': y, 'dx': dx, 'dy': dy, 'button': 0}
 
     def on_mouse_press(self, x, y, button, modifiers):# считывает нажатие кнопок мыши. стрелям при нажатии
         self.mouse_pos['button'] = button
+
+
 
 
 def main():# собственно запуск
@@ -293,6 +308,9 @@ def change_hit_box(this_sprite):
     this_sprite.set_hit_box([(width//2, -height//2), (-width//2, -height//2), (-width//2, -2.5*height//10), (width//2, -2.5*height//10)])
     print(this_sprite.center_x, this_sprite.center_y)
     #self.center_hit_box = (this_sprite.center_x, this_sprite.center_y-2*height//5)
+
+
+
 
 if __name__ == "__main__":# проверка, что запускаем именно из main
     main()

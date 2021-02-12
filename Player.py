@@ -19,8 +19,8 @@ class Player(arcade.Sprite): #класс персанажа
         self.speed = MOVEMENT_SPEED
         self.center = 0
         self.bullet_now = 6
-        self.flag_change_x = 0
-        self.flag_change_y = 0
+        self.x_sp = [0]
+        self.y_sp = [0]
         print(self.width, self.height)
         #self.center_hit_box = (self.center_x, self.center_y)
     
@@ -42,9 +42,9 @@ class Player(arcade.Sprite): #класс персанажа
         elif self.top > SCREEN_HEIGHT - 1:
             self.top = SCREEN_HEIGHT - 1
         
-        self.change_x = self.flag_change_x * self.speed
-        self.change_y = self.flag_change_y * self.speed
-        
+        self.change_x = self.x_sp[-1] * self.speed
+        self.change_y = self.y_sp[-1] * self.speed
+        self.speed = MOVEMENT_SPEED if self.x_sp[-1] or self.y_sp[-1] else 0
         
         
 

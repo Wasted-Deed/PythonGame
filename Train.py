@@ -65,7 +65,8 @@ class Train(arcade.Sprite):
             TRAIN_SCALING = 1.0 * SPRITE_SCALING
             self.image = F"images/vagon_{num}.png"
             super().__init__(self.image, TRAIN_SCALING, hit_box_algorithm = 'Detailed')     
-            self.speed =  TRAIN_SPEED     
+            self.speed =  TRAIN_SPEED    
+            self.m = 3 
             self.jump = 0
 
         def update(self):
