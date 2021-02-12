@@ -1,6 +1,7 @@
 import arcade
 import os
 import time
+import arcade.gui
 from random import randint 
 from PIL import Image
 from math import atan2, sin, cos, sqrt, pi
@@ -10,29 +11,61 @@ from variables import *
 from Bullet import Bullet
 from hp import draw_hp
 from Train import Train
+from arcade.gui import UIManager
+from MenuButton import *
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(file_path)
-#изменить отсчёт времени
-#изменить стенки для героя 
+
 #добавить охранникам стрельбу
 #переработать стрельбу - зависает на первом выстреле
-#увеличить хит-боксы, ибо выстрелы взаимодействуют с ними 
+#увеличить хит-боксы, ибо выстрелы взаимодействуют с ними
 
 class MenuView(arcade.View):#меню
+    def __init__(self):
+        super().__init__()
 
-    def on_show(self):
+        self.ui_manager = UIManager()
+
+    def on_show_view(self):
+        self.setup()
         arcade.set_background_color(arcade.color.BLACK)
 
     def on_draw(self):
         arcade.start_render()
-        arcade.draw_text("Кликни, чтобы начать играть", window.get_size()[0]/2, window.get_size()[1]/2,
-                         arcade.color.WHITE, font_size=30, anchor_x="center")
+        arcade.draw_text("Добро пожаловать", 
+                        self.window.width / 2, 
+                        self.window.height / 1.5,
+                        arcade.color.WHITE, 
+                        font_size=30, 
+                        anchor_x="center")
 
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = GameView()
-        game_view.setup() #загрузка ресурсов
-        self.window.show_view(game_view)
+    def on_hide_view(self):
+        self.ui_manager.unregister_handlers()
+
+    def setup(self):
+        self.ui_manager.purge_ui_elements()
+        self.ui_manager.add_ui_element(PlayButton())
+        self.ui_manager.add_ui_element(SettingButton())
+        self.ui_manager.add_ui_element(ExitButton())
+    
+    def on_update(self, delta_time):
+        for i in range(3):
+            button = self.ui_manager.find_by_id(i)
+            button.center_x = self.window.width / 2
+            button.center_y = (self.window.height / 2) - (35 * i)
+            if button.click and i == 0:
+                button.click = False
+                game_view = GameView()
+                game_view.setup() #загрузка ресурсов
+                window.show_view(game_view)
+            elif button.click and i == 1:
+                button.click = False
+            elif button.click and i == 2:
+                button.click = False
+                window.close()
+            
+
 
 class GameView(arcade.View):#игра
 
@@ -49,17 +82,17 @@ class GameView(arcade.View):#игра
         self.start_time = time.time()
         self.recharge = False
         self.textures = []
+        self.permission = window.get_size()
 
     def setup(self):
         # препятствия
-        self.blocks = arcade.SpriteList(use_spatial_hash=True, is_static=True)
+        self.blocks = arcade.SpriteList(use_spatial_hash=True)
         for block in sp_coordinates_obstacles:
             number = randint(1, 2)
-            self.blocks.append(arcade.Sprite("images/obstacles/2-%d.png" % number, 1, center_x=block[0], center_y= block[1],
-                                            hit_box_algorithm = "Detailed"))
-            
-
-
+            self.blocks.append(arcade.Sprite("images/obstacles/2-%d.png" % number, 1.5, 
+                                            center_x=self.permission[0]*block[0], 
+                                            center_y=self.permission[1]*block[1],
+                                            hit_box_algorithm="Detailed"))
         #путь поезда
         self.paint_reils_way_flag = False
         self.way_file = 'train_way.txt'
@@ -157,7 +190,14 @@ class GameView(arcade.View):#игра
                                             self.background)
         self.bullet_list.draw()
         self.people_list.draw()
-        self.blocks.draw()
+        if window.get_size() != self.permission:
+            self.permission = window.get_size()
+            for i in range(len(self.blocks)):
+                self.blocks[i].center_x = self.permission[0]*sp_coordinates_obstacles[i][0]
+                self.blocks[i].center_y = self.permission[1]*sp_coordinates_obstacles[i][1]
+            self.blocks.draw()
+        else:
+            self.blocks.draw()
 
         #for i in range(1, len(self.way_list)):
         #    arcade.draw_line(self.way_list[i-1][0], self.way_list[i-1][1], self.way_list[i][0], self.way_list[i][1], (255, 0, 255), 2)
@@ -229,7 +269,7 @@ class GameView(arcade.View):#игра
             people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)#проверяем взаимодейсвие 
             #спрайта перса и спрайты охранников, если они косаются, то мы получаем список тех охранников, кто коснулся
             for people2 in people_with_people: 
-                rad = atan2(people1.center_y - people2.center_y, people1.center_y - people2.center_x)
+                rad = atan2(people1.center_y - people2.center_y, people1.center_x - people2.center_x)
                 if abs(people1.width - people1.width)//2 <= abs(people1.center_x - people2.center_x): 
                     # people2.change_x = -cos(rad) * people2.speed
                     people2.flag_change_x = 0 #-sin(rad) * people2.speed
@@ -260,6 +300,7 @@ class GameView(arcade.View):#игра
             for guard in guards_shot_list:
                 guard.hp -= bullet.atk
                 if guard.hp < 1:
+                    self.guards_list.remove(guard)
                     self.people_list.remove(guard)
                     self.all_sprites.remove(guard)
             if bullet.center_x > SCREEN_WIDTH + 10 or bullet.center_x < -10 or \
@@ -286,7 +327,7 @@ class GameView(arcade.View):#игра
             self.way_list = []
 
         if key == arcade.key.SPACE:
-            game_over_view = GameOverView()
+            game_over_view = MenuView()
             self.window.show_view(game_over_view)
 
     def on_key_release(self, key, modifiers):#обработка, если клавишу отпустили
@@ -333,8 +374,9 @@ def change_hit_box(this_sprite):
 
 def main():# собственно запуск
     global window 
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=True)
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=False, resizable=True)
     window.center_window()
+    window.set_min_size(SCREEN_WIDTH, SCREEN_HEIGHT) # вырубить, если нужно перейти в полный экран и поменять местами True and False в конструкторе
     menu_view = MenuView()
     window.show_view(menu_view)
     arcade.run()
