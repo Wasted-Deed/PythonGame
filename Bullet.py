@@ -15,13 +15,14 @@ class Bullet(arcade.Sprite): #стрельба перса, путём сложн
     
     def __init__(self, shooter_sprite, hero_pos, mouse_pos):
         self.image = "images/bullet.png"
-        super().__init__(self.image, BULLET_SCALING, hit_box_algorithm = 'Detailed')
+        super().__init__(self.image, BULLET_SCALING, hit_box_algorithm = 'None')
         self.angle_rad = atan2(mouse_pos['y'] - hero_pos['y'], mouse_pos['x'] - hero_pos['x'])
         self.center_x = hero_pos['x'] + DISTANCE_FROM_PLAYER * cos(self.angle_rad)
         self.center_y = hero_pos['y'] + DISTANCE_FROM_PLAYER * sin(self.angle_rad)
         self.radians = self.angle_rad
         self.shooter_sprite = shooter_sprite
         self.atk = 150
+        self.speed = SPEED_BULLET
     
     def update(self):
         self.center_x += SPEED_BULLET * cos(self.angle_rad)

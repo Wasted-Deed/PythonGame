@@ -1,6 +1,7 @@
 import arcade
 import os
-import time 
+import time
+from random import randint 
 from PIL import Image
 from math import atan2, sin, cos, sqrt, pi
 from Guard import Guard
@@ -10,32 +11,53 @@ from Bullet import Bullet
 from hp import draw_hp
 from Train import Train
 
+file_path = os.path.dirname(os.path.abspath(__file__))
+os.chdir(file_path)
+#добавить охранникам стрельбу
+#переработать стрельбу - зависает на первом выстреле
+#увеличить хит-боксы, ибо выстрелы взаимодействуют с ними 
 
-class MyGame(arcade.Window):#самый главный класс
+class MenuView(arcade.View):#меню
 
-    def __init__(self, width, height, title):
-        super().__init__(width, height, title, resizable=True)
-        self.center_window()
-       
-        file_path = os.path.dirname(os.path.abspath(__file__))
-        os.chdir(file_path)
+    def on_show(self):
+        arcade.set_background_color(arcade.color.BLACK)
 
+    def on_draw(self):
+        arcade.start_render()
+        arcade.draw_text("Кликни, чтобы начать играть", window.get_size()[0]/2, window.get_size()[1]/2,
+                         arcade.color.WHITE, font_size=30, anchor_x="center")
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        game_view = GameView()
+        game_view.setup() #загрузка ресурсов
+        self.window.show_view(game_view)
+
+class GameView(arcade.View):#игра
+
+    def __init__(self):
+        super().__init__()
+        self.field = window.get_size()
+        self.background = None
         self.player_sprite = None
         self.people_list = None
         self.guards_sprite = None
         self.blocks = None
         self.land = None
-        self.time = 0
-        self.start_time = time.time()
         self.recharge = False
+        self.textures = []
 
-    def setup(self):
+
+    def setup(self):  # предустановки игры
+        
+
         # препятствия
-        self.blocks = arcade.SpriteList(use_spatial_hash=True)
-        self.block_1 = arcade.Sprite("images/obstacles/green_barrels.png", center_x=550, center_y= 350)
-        self.blovk_2 = arcade.Sprite("images/obstacles/green_barrels.png", center_x=550, center_y= 330)
-        self.blocks.append(self.block_1)
-        self.blocks.append(self.blovk_2)
+        self.blocks = arcade.SpriteList(use_spatial_hash=True, is_static=True)
+        for block in sp_coordinates_obstacles:
+            number = randint(1, 2)
+            self.blocks.append(arcade.Sprite("images/obstacles/2-%d.png" % number, 1, center_x=block[0], center_y= block[1],
+                                            hit_box_algorithm = "Detailed"))
+            
+
 
         #путь поезда
         self.paint_reils_way_flag = False
@@ -44,35 +66,30 @@ class MyGame(arcade.Window):#самый главный класс
         self.read_train_way()
         
         #поезд
-        self.train = Train(0, 100, 6)
-        '''
+        self.train = Train(0, 150, 12)
+
         #поле
-        self.land = arcade.SpriteList()
-        for i in sp_coordinates_field:
-            self.land.append(arcade.Sprite("images/земля.png", 1, center_x = i[0], center_y = i[1]))
-        '''
+        self.background = arcade.load_texture("images/земля.png")
+
         #персонаж
         self.people_list = arcade.SpriteList()
         self.player_sprite = Player() 
         self.player_sprite.center_x = 400
-        self.player_sprite.center_y = 50
-        self.people_list.append(self.player_sprite)#кидаем перса в наш список спратов для перса
-
+        self.player_sprite.center_y = 50       
+        self.people_list.append(self.player_sprite)
 
         #охрана
         self.guards_list = arcade.SpriteList()
         for i in range(len(sp_coordinates_guards)):
             x, y = sp_coordinates_guards[i]
-            self.guards_sprite = Guard(x, y, self.player_sprite.center_x, self.player_sprite.center_y)
-            self.guards_sprite.moving_sprite = self.guards_sprite
-            self.guards_sprite.wall = self.blocks
+            self.guards_sprite = Guard(x, y)
             self.guards_sprite.barrier_list = arcade.AStarBarrierList(self.guards_sprite,
                                                                     self.blocks,
-                                                                    25,
-                                                                    -25 * 2,
-                                                                    25 * 40,
-                                                                    -25 * 2,
-                                                                    25 * 24)
+                                                                    20,
+                                                                    0,
+                                                                    window.get_size()[0],
+                                                                    0,
+                                                                    window.get_size()[1])
             self.guards_list.append(self.guards_sprite)
             self.people_list.append(self.guards_sprite)
 
@@ -80,19 +97,27 @@ class MyGame(arcade.Window):#самый главный класс
         self.bullet_list = arcade.SpriteList()
         hero = self.player_sprite
         self.mouse_pos = {'x': hero.center_x, 'y': hero.center_y, 'dx': 0, 'dy': 0, 'button': 0} #задаём координаты мышки
-        #для работы перезарядки
-        self.start_recharge = self.time
+        
 
         #общий список
         self.all_sprites = arcade.SpriteList()
         self.all_sprites.extend(self.people_list)
         self.all_sprites.extend(self.bullet_list)
         self.train.append_all(self.all_sprites)
-        for thing in self.all_sprites:
-            change_hit_box(thing)
 
-    #длинная функция создания пути поезда
-    def paint_reils_way(self, update=False, end=False): #мы рисуем примерный путь поезда
+        #время
+        self.time = 0
+        self.start_time = time.time()
+        self.time_for_collision = time.time()
+        #для работы перезарядки
+        self.start_recharge = self.time
+
+        #эта переменная для постоянной смены хитбоксов
+        # 0 - нижняя четверть спрайта
+        # 1 - весь спрайт
+        self.index = 0
+
+    def paint_reils_way(self, update=False, end=False):  #длинная функция создания пути поезда - мы рисуем примерный путь поезда
         if update:
             list1 = self.way_list
             if len(list1) == 0:
@@ -101,14 +126,12 @@ class MyGame(arcade.Window):#самый главный класс
             delta_y = (self.mouse_pos['y']-list1[-1][1])
             if sqrt((delta_x)**2 + (delta_y)**2) > 25:
                 angle = atan2(delta_y, delta_x)
-                print(cos(angle))
                 self.way_list.append([25*cos(angle) + list1[-1][0], 25*sin(angle) + list1[-1][1]])
         if end:
             list_map = []
             file = open(self.way_file, 'w')
             for x, y in self.way_list:
                 coord = (12.5 + 25 * int(x / 25), 12.5 + 25 * int(y / 25))
-                print(coord)
                 if coord not in list_map:
                     if len(list_map) > 1:
                         if abs(list_map[-2][0] - coord[0]) == 25 and  abs(list_map[-2][1] - coord[1]) == 25:
@@ -122,7 +145,7 @@ class MyGame(arcade.Window):#самый главный класс
             list_map.clear()
             self.way_list = []
 
-    def read_train_way(self):
+    def read_train_way(self):   #  читает из файла путь поезда
         try:
             way_file = open(self.way_file, 'r')
             for line in way_file:
@@ -139,7 +162,11 @@ class MyGame(arcade.Window):#самый главный класс
 
         #отрисовка всего что есть от нижних слоёв к верхним
 
-        #self.land.draw()
+
+        arcade.draw_lrwh_rectangle_textured(0, 0,
+                                            window.get_size()[0], window.get_size()[1],
+                                            self.background)
+
         self.bullet_list.draw()
         self.people_list.draw()
         self.blocks.draw()
@@ -158,9 +185,10 @@ class MyGame(arcade.Window):#самый главный класс
             draw_hp(guard.center_x, guard.center_y, guard._height, guard.max_hp, guard.hp)
         for thing in self.all_sprites:
             thing.draw_hit_box()
-
-        if self.guards_sprite.path:
-            arcade.draw_line_strip(self.guards_sprite.path, arcade.color.BLUE, 2)
+        #отображение пути до гг
+        for guard in self.guards_list:
+            if guard.path:
+                    arcade.draw_line_strip(guard.path, arcade.color.BLUE, 2)
 
         self.train.draw_all()
 
@@ -173,15 +201,14 @@ class MyGame(arcade.Window):#самый главный класс
                 one_bullet = Bullet(shooter_sprite, {'x': hero.center_x, 'y': hero.center_y}, self.mouse_pos)
                 self.bullet_list.append(one_bullet)
                 self.all_sprites.append(one_bullet)
-            elif hero.bullet_now == 0:            #авто-перезарядка, когда закончились патроны
+            elif hero.bullet_now == 0:            #перезарядка при выстреле с пустым магазином
                 self.start_recharge = self.time
                 self.recharge = True
         else:
             pass
     
     def recharge_move(self):     #перезарядка
-        print(self.time-self.start_recharge)
-        time_recharge = 3.0 #время зарядки одной пули
+        time_recharge = 1.0 #время зарядки одной пули
         if self.time - self.start_recharge > time_recharge+0.03: 
             self.start_recharge = self.time
         if self.player_sprite.bullet_now < 6 and self.recharge:
@@ -191,68 +218,87 @@ class MyGame(arcade.Window):#самый главный класс
         else:
             self.recharge = False
 
-    def collision(self):
-        #коллизии между людьми (взаимное отталкивание)
-        for people1 in self.people_list:    # Временно стоят все спрайты. Далее заменить на people_list
-            people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)
+    def collision(self):  # коллизии
+        #коллизии между людьми (взаимное отталкивание) для index = 0
+        if self.index == 0:
+            for people1 in self.all_sprites:    # Временно стоят все спрайты. Далее заменить на people_list
+                people_with_people = arcade.check_for_collision_with_list(people1, self.people_list)
+                for people2 in people_with_people: 
+                    rad = atan2(people1.center_y - people2.center_y, people1.center_x - people2.center_x)
+                    
+                    people1.hitbox_y = people1.center_y - 3* people1.height//8
+                    people2.hitbox_y = people2.center_y - 3* people2.height//8
 
-            for people2 in people_with_people: 
-                rad = atan2(people1.center_y - people2.center_y, people1.center_x - people2.center_x)
-                
-                people1.hitbox_y = people1.center_y - 3* people1.height//8
-                people2.hitbox_y = people2.center_y - 3* people2.height//8
-
-                # отталкивание по горизонтали и вертикали раздельно. По горизонтали, при нецентральном ударе
-                # может происходить смещение по горизонтальи до пракращения взаимодействия
-                print(abs(people1.hitbox_y - people2.hitbox_y), abs(people1.height - people2.height)//2)
-                if abs(people1.hitbox_y - people2.hitbox_y) >= abs(people1.height - people2.height)//2: 
-                    people2.center_y += -sin(rad)/abs(sin(rad)) * people1.speed
-                    people1.center_y += sin(rad)/abs(sin(rad)) * people2.speed
-                elif abs(people1.center_x - people2.center_x) >= abs(people1.width - people1.width)//2:    
-                    people2.center_x += -cos(rad)/abs(cos(rad)) * people1.speed
-                    people1.center_x += cos(rad)/abs(cos(rad)) * people2.speed
+                    # отталкивание по горизонтали и вертикали раздельно. По горизонтали, при нецентральном ударе
+                    # может происходить смещение по горизонтальи до пракращения взаимодействия
+                    if abs(people1.hitbox_y - people2.hitbox_y) >= abs(people1.height - people2.height)//2: 
+                        people2.center_y += -sin(rad)/abs(sin(rad)) * people1.speed
+                        people1.center_y += sin(rad)/abs(sin(rad)) * people2.speed
+                    elif abs(people1.center_x - people2.center_x) >= abs(people1.width - people1.width)//2:    
+                        people2.center_x += -cos(rad)/abs(cos(rad)) * people1.speed
+                        people1.center_x += cos(rad)/abs(cos(rad)) * people2.speed
         
-        
-        for bullet in self.bullet_list: # проверка взаимодейсвия пуль и охраны
-            all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
-            guards_shot_list = arcade.check_for_collision_with_list(bullet, self.people_list)
-            for item in all_shot_list:
-                if item != bullet.shooter_sprite:
+        if self.index == 1: # проверка взаимодейсвия пуль и охраны для полных спрайтов index = 1 
+            # исчезает при столкновении. Если столкновение с живым спрайтом, то отномает жизни
+            for bullet in self.bullet_list: 
+                all_shot_list = arcade.check_for_collision_with_list(bullet, self.all_sprites)
+                guards_shot_list = arcade.check_for_collision_with_list(bullet, self.people_list)
+                for item in all_shot_list:
+                    if item != bullet.shooter_sprite:
+                        self.bullet_list.remove(bullet)
+                        self.all_sprites.remove(bullet)
+                        if item in guards_shot_list:
+                            guard = item
+                            guard.hp -= bullet.atk
+                            if guard.hp < 1:
+                                self.people_list.remove(guard)
+                                self.all_sprites.remove(guard)
+                        break
+                    
+                if bullet.center_x > SCREEN_WIDTH + 10 or bullet.center_x < -10 or \
+                    bullet.center_y > SCREEN_HEIGHT + 10 or bullet.center_y < -10:
                     self.bullet_list.remove(bullet)
                     self.all_sprites.remove(bullet)
-                    if item in guards_shot_list:
-                        guard = item
-                        guard.hp -= bullet.atk
-                        if guard.hp < 1:
-                            self.people_list.remove(guard)
-                            self.all_sprites.remove(guard)
-                    break
-            #for guard in guards_shot_list:
-                
-            if bullet.center_x > SCREEN_WIDTH + 10 or bullet.center_x < -10 or \
-                bullet.center_y > SCREEN_HEIGHT + 10 or bullet.center_y < -10:
-                self.bullet_list.remove(bullet)
-                self.all_sprites.remove(bullet)
 
-    def on_update(self, delta_time):
+    def on_update(self, delta_time):    # рабочий цикл 
         self.train.update()
         self.people_list.update()
 
         for guard in self.guards_list:
-            guard.pos_player = (self.player_sprite.center_x, self.player_sprite.center_y)
+            distant = int(sqrt((guard.center_x - self.player_sprite.center_x)**2 + (guard.center_y - self.player_sprite.center_y)**2))
+            if (distant > 100 and distant < 150) and arcade.has_line_of_sight(guard.position, self.player_sprite.position, self.blocks, 200):
+                guard.path = arcade.astar_calculate_path(guard.position,
+                                                        self.player_sprite.position,
+                                                        guard.barrier_list,
+                                                        diagonal_movement=False)
+            else:
+                guard.path = []
 
-        #self.player_sprite.update_angle(self.mouse_pos)#передаём координаты мыши персу
+        #self.player_sprite.update_angle(self.mouse_pos) #передаём координаты мыши персу если требуется
+        
+        # выстрел по нажитию левой кнопки мыши
         if self.mouse_pos['button'] == 1:
             self.shot(self.player_sprite)
         self.bullet_list.update()
         if self.paint_reils_way_flag:
            self.paint_reils_way(update=True)
 
+        # собственно коллизии
         self.collision()
         
+        # перезарядка
         self.recharge_move()
         self.time = time.time()
         self.mouse_pos['button'] = 0
+
+        
+        # смена хитбокса раз в n*0.016 секунд, где n - колличество циклов системы
+        if time.time() - self.time_for_collision >= 0.048:
+            self.index = (self.index+1)%2
+            for thing in self.people_list:
+                change_hit_box(thing, self.index)
+            self.time_for_collision = time.time()
+        
 
     def on_key_press(self, key, modifiers): #передвижение перса wsad или стрелочками при нажатии
         if key == arcade.key.UP or key == arcade.key.W:
@@ -268,6 +314,10 @@ class MyGame(arcade.Window):#самый главный класс
         if key == arcade.key.M:
             self.paint_reils_way_flag = True
             self.way_list = []
+
+        if key == arcade.key.SPACE:
+            game_over_view = GameOverView()
+            self.window.show_view(game_over_view)
 
     def on_key_release(self, key, modifiers):#обработка, если клавишу отпустили
         player = self.player_sprite
@@ -292,25 +342,39 @@ class MyGame(arcade.Window):#самый главный класс
     def on_mouse_press(self, x, y, button, modifiers):# считывает нажатие кнопок мыши. стрелям при нажатии
         self.mouse_pos['button'] = button
 
+class GameOverView(arcade.View):#последнее окно
+    def on_show(self):
+        arcade.set_background_color(arcade.color.BLACK)
 
+    def on_draw(self):
+        arcade.start_render()
+        arcade.draw_text("Ты слаб! Нажми ESCAPE для рестарта",  window.get_size()[0]/2, window.get_size()[1]/2,
+                         arcade.color.WHITE, 30, anchor_x="center")
+
+    def on_key_press(self, key, _modifiers):
+        if key == arcade.key.ESCAPE:
+            menu_view = MenuView()
+            self.window.show_view(menu_view)
+
+def change_hit_box(this_sprite, index=0): 
+    #print(this_sprite)
+    width, height = Image.open(this_sprite.image).size#this_sprite.width, this_sprite.height
+    #this_sprite.width, this_sprite.height = width, height
+    if index == 0:
+        this_sprite.set_hit_box([(width//2, -height//2), (-width//2, -height//2), (-width//2, -2.5*height//10), (width//2, -2.5*height//10)])
+    elif index == 1:
+        this_sprite.set_hit_box([(width//2, -height//2), (-width//2, -height//2), (-width//2, height//2), (width//2, height//2)])
+    #print(this_sprite.center_x, this_sprite.center_y)
+    #self.center_hit_box = (this_sprite.center_x, this_sprite.center_y-2*height//5)
 
 
 def main():# собственно запуск
     global window 
-    window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    window.setup()
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=True, fullscreen=False)
+    window.center_window()
+    menu_view = MenuView()
+    window.show_view(menu_view)
     arcade.run()
-
-def change_hit_box(this_sprite): 
-    print(this_sprite)
-    width, height = Image.open(this_sprite.image).size#this_sprite.width, this_sprite.height
-    #this_sprite.width, this_sprite.height = width, height
-    this_sprite.set_hit_box([(width//2, -height//2), (-width//2, -height//2), (-width//2, -2.5*height//10), (width//2, -2.5*height//10)])
-    print(this_sprite.center_x, this_sprite.center_y)
-    #self.center_hit_box = (this_sprite.center_x, this_sprite.center_y-2*height//5)
-
-
-
 
 if __name__ == "__main__":# проверка, что запускаем именно из main
     main()

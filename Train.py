@@ -16,7 +16,7 @@ class Train(arcade.Sprite):
     def __init__(self, x_start, y_start, num):
         TRAIN_SCALING = 1.0 * SPRITE_SCALING
         self.image = "images/train.png"
-        super().__init__(self.image, TRAIN_SCALING, hit_box_algorithm = 'Detailed', flipped_horizontally=True)
+        super().__init__(self.image, TRAIN_SCALING, hit_box_algorithm = 'Simple', flipped_horizontally=True)
         self.center_x, self.center_y = x_start, y_start
         self.moved = True
         self.speed = TRAIN_SPEED
@@ -64,7 +64,7 @@ class Train(arcade.Sprite):
         def __init__(self, num): #передаём число от 0 до 3 (см. картинки)
             TRAIN_SCALING = 1.0 * SPRITE_SCALING
             self.image = F"images/vagon_{num}.png"
-            super().__init__(self.image, TRAIN_SCALING, hit_box_algorithm = 'Detailed')     
+            super().__init__(self.image, TRAIN_SCALING, hit_box_algorithm = 'Simple')     
             self.speed =  TRAIN_SPEED    
             self.m = 3 
             self.jump = 0

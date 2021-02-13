@@ -1,15 +1,23 @@
+from arcade import get_display_size
 #общие переменные
 
 SPRITE_SCALING = 0.5 #берём 50% размера от исходного файла
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1000    #get_display_size()[0]
+SCREEN_HEIGHT = 600    #get_display_size()[1]
 SCREEN_TITLE = "Play"
 MOVEMENT_SPEED = 200 /60 *SPRITE_SCALING #скорость перса
 TRAIN_SPEED = 400 / 60 * SPRITE_SCALING
 GUARD_SPEED = 60 / 30 *SPRITE_SCALING
+s = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
-sp_coordinates_guards = [(337, 337)]  #координаты охранников
-sp_coordinates_field = [] #координаты всего поля
-for i in range(int(SCREEN_WIDTH/25) + 1):
-    for j in range(int(SCREEN_HEIGHT/25) + 1):
-        sp_coordinates_field.append((25*i, 25*j))
+sp_coordinates_guards = [(337, 337), (450, 450)]  #координаты охранников
+sp_coordinates_obstacles = [(500, 350), (500, 400)]
+
+#def render_field(size):
+#    a = []
+#    for i in range(int(size[0]/10) + 1):
+#        for j in range(int(size[1]/10) + 1):
+#            a.append((10*i, 10*j))
+#   return a
+    
+#sp_coordinates_field = render_field(s)

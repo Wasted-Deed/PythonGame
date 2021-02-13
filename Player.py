@@ -2,6 +2,8 @@ import arcade
 import os
 from math import atan2, sin, cos, sqrt
 from variables import *
+from arcade import Texture
+from PIL import Image
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(file_path)
@@ -11,7 +13,7 @@ class Player(arcade.Sprite): #класс персанажа
     def __init__(self):
         HERO_SCALING = 1.0 *SPRITE_SCALING #отдельная переменная для размера срайта, если захотим отдельно от всех уменьшить\увеличить
         self.image = "images/hero.png"
-        super().__init__(self.image, HERO_SCALING, hit_box_algorithm = 'Detailed') #загружаем картинку и выставляем параметр
+        super().__init__(self.image, HERO_SCALING, hit_box_algorithm = 'None') #загружаем картинку и выставляем параметр
                                                         #чтобы спрайт блок охватывал именно очертания картинки
         self.max_hp = 15 * 60 #хп
         self.hp = self.max_hp
@@ -45,7 +47,6 @@ class Player(arcade.Sprite): #класс персанажа
         self.change_x = self.x_sp[-1] * self.speed
         self.change_y = self.y_sp[-1] * self.speed
         self.speed = MOVEMENT_SPEED if self.x_sp[-1] or self.y_sp[-1] else 0
-        
         
 
     def update_angle(self, mouse_pos):# перс следит за мышкой
