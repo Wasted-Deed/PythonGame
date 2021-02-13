@@ -11,7 +11,7 @@ GUARD_SPEED = 60 / 30 *SPRITE_SCALING
 s = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
 sp_coordinates_guards = [(337, 337), (450, 450)]  #координаты охранников
-sp_coordinates_obstacles = [(500, 350), (500, 400)]
+sp_coordinates_obstacles = [(0.5, 0.7), (0.5, 0.8)]
 
 #def render_field(size):
 #    a = []
